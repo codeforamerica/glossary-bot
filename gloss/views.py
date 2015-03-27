@@ -1,6 +1,20 @@
+from flask import abort, current_app, request
 from . import gloss as app
 from . import db
-from flask import abort, current_app, request
+from models import Definition
+
+'''
+values posted by Slack:
+    token: the authenticaton token from Slack; available in the integration settings.
+    team_domain: the name of the team (i.e. what shows up in the URL: {xxx}.slack.com)
+    team_id: unique ID for the team
+    channel_name: the name of the channel the message was sent from
+    channel_id: unique ID for the channel the message was sent from
+    user_name: the name of the user that sent the message
+    user_id: unique ID for the user that sent the message
+    command: the command that was used to generate the request (like '/gloss')
+    text: the text that was sent along with the command (like everything after '/gloss ')
+'''
 
 @app.route('/', methods=['POST'])
 def index():
