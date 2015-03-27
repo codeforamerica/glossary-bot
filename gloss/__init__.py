@@ -15,4 +15,4 @@ def create_app(environ):
     app.register_blueprint(gloss)
     return app
 
-from . import views
+from . import views, errors
