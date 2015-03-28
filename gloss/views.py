@@ -51,6 +51,9 @@ def index():
     if command_action == u'stats':
         return 'I think you want statistics about Glossary Bot\'s operations.', 200
 
+    if command_action == u'help':
+        return 'I think you want help using Glossary Bot!', 200
+
     # they asked for a definition
     return 'I think you want a definiton for the term "{}"'.format(full_text), 200
 
