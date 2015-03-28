@@ -9,6 +9,7 @@ def create_app(environ):
     app.config['SQLALCHEMY_DATABASE_URI'] = environ['DATABASE_URL']
     app.config['DATABASE_URL'] = environ['DATABASE_URL']
     app.config['SLACK_TOKEN'] = environ['SLACK_TOKEN']
+    app.config['SLACK_WEBHOOK_URL'] = environ['SLACK_WEBHOOK_URL']
 
     db.init_app(app)
 
