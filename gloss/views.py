@@ -56,11 +56,11 @@ def index():
         return 'I think you want help using Glossary Bot!', 200
 
     # send the definition to the webhook
-    payload_template = '''{{"channel": "#{channel_name}", "username": "{username}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
+    payload_template = '''{{"channel": "#{channel_name}", "username": "{bot_name}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
     payload_values = {}
     payload_values['channel_name'] = unicode(request.form['channel_name'])
-    payload_values['username'] = u'Glossary Bot'
-    payload_values['text'] = u'I think you want a definition for the term "{}"'.format(full_text)
+    payload_values['bot_name'] = u'Glossary Bot'
+    payload_values['text'] = u'I think {} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
     payload_values['icon_emoji'] = u'books'
     payload = payload_template.format(**payload_values)
     webhook_response = post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
