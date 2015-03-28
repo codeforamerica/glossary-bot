@@ -56,7 +56,7 @@ def index():
         return 'I think you want help using Glossary Bot!', 200
 
     # send the definition to the webhook
-    payload_template = '''{"channel": "#{channel_name}", "username": "{username}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}'''
+    payload_template = '''{{"channel": "#{channel_name}", "username": "{username}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
     payload_values = {}
     payload_values['channel_name'] = unicode(request.form['channel_name'])
     payload_values['username'] = u'Glossary Bot'
