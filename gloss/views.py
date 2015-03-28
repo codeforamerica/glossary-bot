@@ -3,6 +3,7 @@ from . import gloss as app
 from . import db
 from models import Definition
 from re import sub
+from requests import post
 
 '''
 values posted by Slack:
@@ -56,6 +57,17 @@ def index():
 
     # they asked for a definition
     return 'I think you want a definiton for the term "{}"'.format(full_text), 200
+
+    # send the definition to the webhook
+    payload_template = '''{"channel": "#{channel_name}", "username": "{username}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}'''
+    payload_values = {}
+    payload_values['channel_name'] = unicode(request.form['channel_name'])
+    payload_values['username'] = u'Glossary Bot'
+    payload_values['text'] = u'I think you want a definition for the term "{}"'.format(full_text)
+    payload_values['icon_emoji'] = u'books'
+    payload = payload_template.format(**payload_values)
+    webhook_response = post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
+
 
     # params = {'team_id': request.form['team_id'], 'team_domain': request.form['team_domain'], 'channel_id': request.form['channel_id'], 'channel_name': request.form['channel_name'], 'user_id': request.form['user_id'], 'user_name': request.form['user_name'], 'command': request.form['command'], 'text': request.form['text']}
     # return 'you are authorized, and you said {text}! team_id:{team_id} team_domain:{team_domain} channel_id:{channel_id} channel_name:{channel_name} user_id:{user_id} user_name:{user_name} command:{command}'.format(**params), 200
