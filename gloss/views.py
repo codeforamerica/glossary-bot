@@ -18,6 +18,22 @@ values posted by Slack:
     text: the text that was sent along with the command (like everything after '/gloss ')
 '''
 
+def send_webhook(channel_id=u'', text=u''):
+    # don't send empty messages
+    if not text:
+        return
+
+    # build the payload json
+    payload_template = '''{{"channel": "{channel_id}", "username": "{bot_name}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
+    payload_values = {}
+    payload_values['channel_id'] = channel_id
+    payload_values['bot_name'] = u'Glossary Bot'
+    payload_values['text'] = text
+    payload_values['icon_emoji'] = u'no_mouth'
+    payload = payload_template.format(**payload_values)
+    # return the response
+    return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
+
 @app.route('/', methods=['POST'])
 def index():
     # verify that the request is authorized
@@ -32,6 +48,10 @@ def index():
     command_components = full_text.split(' ')
     command_action = command_components[0]
     command_params = ' '.join(command_components[1:])
+
+    #
+    # commands that get private responses
+    #
 
     if command_action == u'set':
         set_components = command_params.split('=')
@@ -49,24 +69,23 @@ def index():
         delete_term = command_params
         return 'I think you want to delete the definition for "{}"'.format(delete_term), 200
 
-    if command_action == u'stats':
-        return 'I think you want statistics about Glossary Bot\'s operations.', 200
-
-    if command_action == u'help':
+    if command_action == u'help' or full_text == u'' or full_text == u' ':
         return 'I think you want help using Glossary Bot!', 200
 
-    # send the definition to the webhook
-    payload_template = '''{{"channel": "{channel_id}", "username": "{bot_name}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
-    payload_values = {}
-    payload_values['channel_id'] = unicode(request.form['channel_id'])
-    payload_values['bot_name'] = u'Glossary Bot'
-    payload_values['text'] = u'I think {} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
-    payload_values['icon_emoji'] = u'books'
-    payload = payload_template.format(**payload_values)
-    webhook_response = post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
+    #
+    # commands that get public responses
+    #
 
-    # they asked for a definition
-    return 'I think you want a definiton for the term "{}". Response from the webhook to #{}/{}: {}'.format(full_text, unicode(request.form['channel_name']), unicode(request.form['channel_id']), webhook_response.status_code), 200
+    channel_id = unicode(request.form['channel_id'])
+
+    if command_action == u'stats':
+        msg_text = '{} wants statistics about my operations.'.format(request.form['user_name'])
+        webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+        return 'Response from the webhook to #{}/{}: {}'.format(full_text, unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
+
+    msg_text = u'{} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
+    webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+    return 'Response from the webhook to #{}/{}: {}'.format(full_text, unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
     # params = {'team_id': request.form['team_id'], 'team_domain': request.form['team_domain'], 'channel_id': request.form['channel_id'], 'channel_name': request.form['channel_name'], 'user_id': request.form['user_id'], 'user_name': request.form['user_name'], 'command': request.form['command'], 'text': request.form['text']}
     # return 'you are authorized, and you said {text}! team_id:{team_id} team_domain:{team_domain} channel_id:{channel_id} channel_name:{channel_name} user_id:{user_id} user_name:{user_name} command:{command}'.format(**params), 200
