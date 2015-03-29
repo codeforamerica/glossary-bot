@@ -56,9 +56,9 @@ def index():
         return 'I think you want help using Glossary Bot!', 200
 
     # send the definition to the webhook
-    payload_template = '''{{"channel": "#{channel_name}", "username": "{bot_name}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
+    payload_template = '''{{"channel": "{channel_id}", "username": "{bot_name}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
     payload_values = {}
-    payload_values['channel_name'] = unicode(request.form['channel_name'])
+    payload_values['channel_id'] = unicode(request.form['channel_id'])
     payload_values['bot_name'] = u'Glossary Bot'
     payload_values['text'] = u'I think {} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
     payload_values['icon_emoji'] = u'books'
@@ -66,7 +66,7 @@ def index():
     webhook_response = post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
     # they asked for a definition
-    return 'I think you want a definiton for the term "{}". Response from the webhook to #{}: {}'.format(full_text, unicode(request.form['channel_name']), webhook_response.status_code), 200
+    return 'I think you want a definiton for the term "{}". Response from the webhook to #{}/{}: {}'.format(full_text, unicode(request.form['channel_name']), unicode(request.form['channel_id']), webhook_response.status_code), 200
 
     # params = {'team_id': request.form['team_id'], 'team_domain': request.form['team_domain'], 'channel_id': request.form['channel_id'], 'channel_name': request.form['channel_name'], 'user_id': request.form['user_id'], 'user_name': request.form['user_name'], 'command': request.form['command'], 'text': request.form['text']}
     # return 'you are authorized, and you said {text}! team_id:{team_id} team_domain:{team_domain} channel_id:{channel_id} channel_name:{channel_name} user_id:{user_id} user_name:{user_name} command:{command}'.format(**params), 200
