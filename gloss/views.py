@@ -27,9 +27,9 @@ def send_webhook(channel_id=u'', text=u''):
     payload_template = '''{{"channel": "{channel_id}", "username": "{bot_name}", "text": "{text}", "icon_emoji": ":{icon_emoji}:"}}'''
     payload_values = {}
     payload_values['channel_id'] = channel_id
-    payload_values['bot_name'] = u'Glossary Bot'
+    payload_values['bot_name'] = u'Gloss Bot'
     payload_values['text'] = text
-    payload_values['icon_emoji'] = u'no_mouth'
+    payload_values['icon_emoji'] = u'lipstick'
     payload = payload_template.format(**payload_values)
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
