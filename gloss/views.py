@@ -53,7 +53,7 @@ def index():
     # commands that get private responses
     #
 
-    channel_id = unicode(request.form['user_id'])
+    channel_id = u'@{}'.format(unicode(request.form['user_name']))
 
     if command_action == u'set':
         set_components = command_params.split('=')
