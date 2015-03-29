@@ -70,7 +70,7 @@ def index():
         return 'I think you want to delete the definition for "{}"'.format(delete_term), 200
 
     if command_action == u'help' or full_text == u'' or full_text == u' ':
-        return 'I think you want help using Glossary Bot!', 200
+        return 'I think you want help using Glossary Bot!\n*/gloss <term>* _to define <term>_\n*/gloss set <term> = <definition>* _to set the definition for a term_\n*/gloss delete <term>* _to delete the definition for a term_\n*/gloss help* _to see this message_\n*/gloss stats* _to get statistics about my operations_', 200
 
     #
     # commands that get public responses
