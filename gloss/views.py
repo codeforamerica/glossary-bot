@@ -60,29 +60,29 @@ def index():
         if len(set_components) != 2 or u'=' not in command_params:
             msg_text = 'I\'m sorry, but I didn\'t understand your command. A set command should look like this: /gloss set EW = Eligibility Worker'
             webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-            return 'Response from the webhook to @{}/{}: {}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code), 200
+            return 'Response from the webhook to @{}/{}: {}/{}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code, webhook_response.content), 200
 
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
         msg_text = 'I think you want to set the definition for "{}" to "{}"'.format(set_term, set_value)
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-        return 'Response from the webhook to @{}/{}: {}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code), 200
+        return 'Response from the webhook to @{}/{}: {}/{}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code, webhook_response.content), 200
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
             msg_text = 'I\'m sorry, but I didn\'t understand your command. A delete command should look like this: /gloss delete EW'
             webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-            return 'Response from the webhook to @{}/{}: {}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code), 200
+            return 'Response from the webhook to @{}/{}: {}/{}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code, webhook_response.content), 200
 
         delete_term = command_params
         msg_text = 'I think you want to delete the definition for "{}"'.format(delete_term)
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-        return 'Response from the webhook to @{}/{}: {}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code), 200
+        return 'Response from the webhook to @{}/{}: {}/{}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code, webhook_response.content), 200
 
     if command_action == u'help' or full_text == u'' or full_text == u' ':
         msg_text = 'I think you want help using Glossary Bot!\n*/gloss <term>* _to define <term>_\n*/gloss set <term> = <definition>* _to set the definition for a term_\n*/gloss delete <term>* _to delete the definition for a term_\n*/gloss help* _to see this message_\n*/gloss stats* _to get statistics about my operations_'
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-        return 'Response from the webhook to @{}/{}: {}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code), 200
+        return 'Response from the webhook to @{}/{}: {}/{}'.format(unicode(request.form['user_name']), unicode(request.form['user_id']), webhook_response.status_code, webhook_response.content), 200
 
     #
     # commands that get public responses
@@ -93,11 +93,11 @@ def index():
     if command_action == u'stats':
         msg_text = '{} wants statistics about my operations.'.format(request.form['user_name'])
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-        return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
+        return 'Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
     msg_text = u'{} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
     webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-    return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
+    return 'Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
     # params = {'team_id': request.form['team_id'], 'team_domain': request.form['team_domain'], 'channel_id': request.form['channel_id'], 'channel_name': request.form['channel_name'], 'user_id': request.form['user_id'], 'user_name': request.form['user_name'], 'command': request.form['command'], 'text': request.form['text']}
     # return 'you are authorized, and you said {text}! team_id:{team_id} team_domain:{team_domain} channel_id:{channel_id} channel_name:{channel_name} user_id:{user_id} user_name:{user_name} command:{command}'.format(**params), 200
