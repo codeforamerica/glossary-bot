@@ -53,24 +53,36 @@ def index():
     # commands that get private responses
     #
 
+    channel_id = unicode(request.form['user_id'])
+
     if command_action == u'set':
         set_components = command_params.split('=')
         if len(set_components) != 2 or u'=' not in command_params:
-            return 'I\'m sorry, but I didn\'t understand your command. A set command should look like this: /gloss set EW = Eligibility Worker', 200
+            msg_text = 'I\'m sorry, but I didn\'t understand your command. A set command should look like this: /gloss set EW = Eligibility Worker'
+            webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+            return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
-        return 'I think you want to set the definition for "{}" to "{}"'.format(set_term, set_value), 200
+        msg_text = 'I think you want to set the definition for "{}" to "{}"'.format(set_term, set_value)
+        webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+        return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
-            return 'I\'m sorry, but I didn\'t understand your command. A delete command should look like this: /gloss delete EW', 200
+            msg_text = 'I\'m sorry, but I didn\'t understand your command. A delete command should look like this: /gloss delete EW'
+            webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+            return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
         delete_term = command_params
-        return 'I think you want to delete the definition for "{}"'.format(delete_term), 200
+        msg_text = 'I think you want to delete the definition for "{}"'.format(delete_term)
+        webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+        return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
     if command_action == u'help' or full_text == u'' or full_text == u' ':
-        return 'I think you want help using Glossary Bot!\n*/gloss <term>* _to define <term>_\n*/gloss set <term> = <definition>* _to set the definition for a term_\n*/gloss delete <term>* _to delete the definition for a term_\n*/gloss help* _to see this message_\n*/gloss stats* _to get statistics about my operations_', 200
+        msg_text = 'I think you want help using Glossary Bot!\n*/gloss <term>* _to define <term>_\n*/gloss set <term> = <definition>* _to set the definition for a term_\n*/gloss delete <term>* _to delete the definition for a term_\n*/gloss help* _to see this message_\n*/gloss stats* _to get statistics about my operations_'
+        webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+        return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
     #
     # commands that get public responses
