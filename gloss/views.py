@@ -81,11 +81,11 @@ def index():
     if command_action == u'stats':
         msg_text = '{} wants statistics about my operations.'.format(request.form['user_name'])
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-        return 'Response from the webhook to #{}/{}: {}'.format(full_text, unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
+        return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
     msg_text = u'{} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
     webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-    return 'Response from the webhook to #{}/{}: {}'.format(full_text, unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
+    return 'Response from the webhook to #{}/{}: {}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code), 200
 
     # params = {'team_id': request.form['team_id'], 'team_domain': request.form['team_domain'], 'channel_id': request.form['channel_id'], 'channel_name': request.form['channel_name'], 'user_id': request.form['user_id'], 'user_name': request.form['user_name'], 'command': request.form['command'], 'text': request.form['text']}
     # return 'you are authorized, and you said {text}! team_id:{team_id} team_domain:{team_domain} channel_id:{channel_id} channel_name:{channel_name} user_id:{user_id} user_name:{user_name} command:{command}'.format(**params), 200
