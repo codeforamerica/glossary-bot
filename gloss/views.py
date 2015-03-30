@@ -19,7 +19,7 @@ values posted by Slack:
     text: the text that was sent along with the command (like everything after '/gloss ')
 '''
 
-def send_webhook(channel_id=u'', text=u''):
+def send_webhook(channel_id=u'', text=None):
     # don't send empty messages
     if not text:
         return
