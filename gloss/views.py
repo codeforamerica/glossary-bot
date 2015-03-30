@@ -145,20 +145,20 @@ def index():
         # send the message
         msg_text = 'I have {}.'.format(get_stats())
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-        return
         # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
-    # get the definition
-    entry = get_definition(full_text)
-    if not entry:
+    else:
+        # get the definition
+        entry = get_definition(full_text)
+        if not entry:
+            # remember this query
+            log_query(term=full_text, user=user_name, action=u'not_found')
+
+            return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
+
         # remember this query
-        log_query(term=full_text, user=user_name, action=u'not_found')
+        log_query(term=full_text, user=user_name, action=u'found')
 
-        return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
-
-    # remember this query
-    log_query(term=full_text, user=user_name, action=u'found')
-
-    msg_text = u'*{}*: _{}_'.format(entry.term, entry.definition)
-    webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
-    # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
+        msg_text = u'*{}*: _{}_'.format(entry.term, entry.definition)
+        webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+        # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
