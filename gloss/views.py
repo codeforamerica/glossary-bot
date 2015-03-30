@@ -1,7 +1,7 @@
 from flask import abort, current_app, request
 from . import gloss as app
 from . import db
-from models import Definition
+from models import Definition, Interaction
 from re import sub
 from requests import post
 import json
