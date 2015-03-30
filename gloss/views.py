@@ -68,6 +68,9 @@ def index():
     command_action = command_components[0]
     command_params = ' '.join(command_components[1:])
 
+    # get the user name
+    user_name = unicode(request.form['user_name'])
+
     #
     # commands that get private responses
     #
@@ -86,7 +89,7 @@ def index():
             return 'Sorry, but *Gloss Bot* has already defined *{}* as *{}*'.format(set_term, entry.definition), 200
 
         # save the definition in the database
-        entry = Definition(term=set_term, definition=set_value, defined_user=unicode(request.form['user_name']))
+        entry = Definition(term=set_term, definition=set_value, defined_user=user_name)
         try:
             db.session.add(entry)
             db.session.commit()
@@ -113,6 +116,14 @@ def index():
         except Exception as e:
             return 'Sorry, but *Gloss Bot* was unable to delete that definition: {}, {}'.format(e.message, e.args), 200
 
+        # remember this delete
+        log = Interaction(term=delete_term, user=user_name, action=u'delete')
+        try:
+            db.session.add(log)
+            db.session.commit()
+        except:
+            pass
+
         return '*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
@@ -134,6 +145,14 @@ def index():
     entry = get_definition(full_text)
     if not entry:
         return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
+
+    # remember this query
+    log = Interaction(term=full_text, user=user_name, action=u'query')
+    try:
+        db.session.add(log)
+        db.session.commit()
+    except:
+        pass
 
     msg_text = u'*{}*: _{}_'.format(entry.term, entry.definition)
     webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
