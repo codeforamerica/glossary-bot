@@ -10,4 +10,4 @@ def page_not_found(e):
 
 @app.app_errorhandler(500)
 def internal_server_error(e):
-    return 'Error: Internal Server Error', 500
+    return 'Error: Internal Server Error, Bummer!', 500
