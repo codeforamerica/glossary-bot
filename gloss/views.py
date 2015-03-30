@@ -57,7 +57,7 @@ def index():
     if command_action == u'set':
         set_components = command_params.split('=')
         if len(set_components) != 2 or u'=' not in command_params:
-            return 'Sorry, but *Gloss Bot* didn\'t understand your command. A set command should look like this: /gloss set EW = Eligibility Worker', 200
+            return 'Sorry, but *Gloss Bot* didn\'t understand your command. A set command should look like this: */gloss set EW = Eligibility Worker*', 200
 
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
@@ -65,7 +65,7 @@ def index():
         # check the database to see if the term's already defined
         entry = Definition.query.filter_by(term=set_term).first()
         if entry:
-            return 'Sorry, but *Gloss Bot* has already defined {} as {}'.format(set_term, entry.definition), 200
+            return 'Sorry, but *Gloss Bot* has already defined *{}* as *{}*'.format(set_term, entry.definition), 200
 
         # save the definition in the database
         entry = Definition(term=set_term, definition=set_value, defined_user=unicode(request.form['user_name']))
@@ -79,14 +79,14 @@ def index():
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
-            return 'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: /gloss delete EW', 200
+            return 'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: */gloss delete EW*', 200
 
         delete_term = command_params
 
         # verify that the definition is in the database
         entry = Definition.query.filter_by(term=delete_term).first()
         if not entry:
-            return 'Sorry, but *Gloss Bot* has no definition for {}'.format(delete_term), 200
+            return 'Sorry, but *Gloss Bot* has no definition for *{}*'.format(delete_term), 200
 
         # delete the definition from the database
         try:
@@ -108,7 +108,7 @@ def index():
 
     if command_action == u'stats':
         # gather some statistics
-        entries = db.session.query(func.count(Definition.term))
+        entries = db.session.query(func.count(Definition.term)).scalar()
         outputs = (
             ("definitions for", entries, "term", "terms")
         )
@@ -124,7 +124,7 @@ def index():
     # get the definition
     entry = Definition.query.filter_by(term=full_text).first()
     if not entry:
-        return 'Sorry, but *Gloss Bot* has no definition for {term}. You can set a definition with the command */gloss set {term} = <definition>'.format(term=full_text), 200
+        return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
 
     msg_text = u'*{}*: _{}_'.format(entry.term, entry.definition)
     webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
