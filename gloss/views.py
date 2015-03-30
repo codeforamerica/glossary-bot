@@ -60,7 +60,21 @@ def index():
 
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
-        return '*Gloss Bot* thinks you want to set the definition for \'{}\' to \'{}\''.format(set_term, set_value), 200
+
+        # check the database to see if the term's already defined
+        definition = Definition.query.filter_by(term=set_term).first()
+        if definition:
+            return 'Sorry, but *Gloss Bot* has already defined {} as {}'.format(set_term, definition), 200
+
+        # save the definition in the database
+        definition = Definition(term=set_term, definition=set_value, defined_user=unicode(request.form['user_name']))
+        try:
+            db.session.add(definition)
+            db.session.commit()
+        except:
+            return 'Sorry, but *Gloss Bot* is having problems with its database.', 200
+
+        return '*Gloss Bot* has set the definition for \'{}\' to \'{}\''.format(set_term, set_value), 200
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
