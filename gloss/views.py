@@ -29,7 +29,7 @@ def send_webhook(channel_id=u'', text=u''):
     payload_values['channel'] = channel_id
     payload_values['text'] = text
     payload_values['username'] = u'Gloss Bot'
-    payload_values['icon_emoji'] = u'lipstick'
+    payload_values['icon_emoji'] = u':lipstick:'
     payload = json.dumps(payload_values)
     print payload
     # return the response
