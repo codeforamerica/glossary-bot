@@ -6,7 +6,7 @@ class Definition(db.Model):
     __tablename__ = 'definitions'
     # Columns
     id = db.Column(db.Integer, primary_key=True)
-    term = db.Column(db.Unicode())
+    term = db.Column(db.Unicode(), index=True)
     definition = db.Column(db.Unicode())
     defined_date = db.Column(db.DateTime())
     defined_user = db.Column(db.Unicode())
@@ -23,7 +23,7 @@ class Interaction(db.Model):
     Interaction_date = db.Column(db.DateTime())
     Interaction_user = db.Column(db.Unicode())
     Interaction_term = db.Column(db.Unicode())
-    action = db.Column(db.Unicode())
+    action = db.Column(db.Unicode(), index=True)
 
     def __repr__(self):
         return '<Action: {}, Date: {}>'.format(self.action, self.Interaction_date)
