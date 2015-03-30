@@ -1,4 +1,5 @@
 from . import db
+from datetime import datetime
 
 class Definition(db.Model):
     ''' Records of term definitions, along with some metadata
@@ -8,7 +9,7 @@ class Definition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     term = db.Column(db.Unicode(), index=True)
     definition = db.Column(db.Unicode())
-    defined_date = db.Column(db.DateTime())
+    defined_date = db.Column(db.DateTime(), default=datetime.utcnow)
     defined_user = db.Column(db.Unicode())
 
     def __repr__(self):
@@ -20,7 +21,7 @@ class Interaction(db.Model):
     __tablename__ = 'interactions'
     # Columns
     id = db.Column(db.Integer, primary_key=True)
-    Interaction_date = db.Column(db.DateTime())
+    Interaction_date = db.Column(db.DateTime(), default=datetime.utcnow)
     Interaction_user = db.Column(db.Unicode())
     Interaction_term = db.Column(db.Unicode())
     action = db.Column(db.Unicode(), index=True)
