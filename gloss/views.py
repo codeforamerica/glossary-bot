@@ -50,6 +50,9 @@ def get_stats():
     # return the message
     return ', '.join(lines)
 
+def get_definition(term):
+    return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
+
 @app.route('/', methods=['POST'])
 def index():
     # verify that the request is authorized
@@ -78,7 +81,7 @@ def index():
         set_value = set_components[1].strip()
 
         # check the database to see if the term's already defined
-        entry = Definition.query.filter_by(term=set_term).first()
+        entry = get_definition(set_term)
         if entry:
             return 'Sorry, but *Gloss Bot* has already defined *{}* as *{}*'.format(set_term, entry.definition), 200
 
@@ -99,7 +102,7 @@ def index():
         delete_term = command_params
 
         # verify that the definition is in the database
-        entry = Definition.query.filter_by(term=delete_term).first()
+        entry = get_definition(delete_term)
         if not entry:
             return 'Sorry, but *Gloss Bot* has no definition for *{}*'.format(delete_term), 200
 
@@ -128,7 +131,7 @@ def index():
         return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
     # get the definition
-    entry = Definition.query.filter_by(term=full_text).first()
+    entry = get_definition(full_text)
     if not entry:
         return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
 
