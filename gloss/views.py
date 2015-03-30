@@ -36,21 +36,35 @@ def send_webhook(channel_id=u'', text=None):
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
 def get_stats():
-    # gather some statistics
+    ''' Gather and return some statistics
+    '''
     entries = db.session.query(func.count(Definition.term)).scalar()
-    definers = db.session.query(func.count(distinct(Definition.defined_user))).scalar()
+    definers = db.session.query(func.count(distinct(Definition.user))).scalar()
+    queries = db.session.query(func.count(Interaction.action)).scalar()
     outputs = (
         (u'definitions for', entries, u'term', u'terms'),
-        (u'', definers, u'person has defined terms', u'people has defined terms')
+        (u'', definers, u'person has defined terms', u'people has defined terms'),
+        (u'people have asked for definitions', queries, u'time', u'times')
     )
     lines = []
     for prefix, period, singular, plural in outputs:
         if period:
             lines.append('{}{} {}'.format('{} '.format(prefix) if prefix else u'', period, singular if period == 1 else plural))
     # return the message
-    return ', '.join(lines)
+    return '\n'.join(lines)
+
+def log_query(term, user, action):
+    ''' Log a query into the interactions table
+    '''
+    try:
+        db.session.add(Interaction(term=term, user=user, action=action))
+        db.session.commit()
+    except:
+        pass
 
 def get_definition(term):
+    ''' Get the definition for a term from the database
+    '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
 
 @app.route('/', methods=['POST'])
@@ -89,7 +103,7 @@ def index():
             return 'Sorry, but *Gloss Bot* has already defined *{}* as *{}*'.format(set_term, entry.definition), 200
 
         # save the definition in the database
-        entry = Definition(term=set_term, definition=set_value, defined_user=user_name)
+        entry = Definition(term=set_term, definition=set_value, user=user_name)
         try:
             db.session.add(entry)
             db.session.commit()
@@ -116,14 +130,6 @@ def index():
         except Exception as e:
             return 'Sorry, but *Gloss Bot* was unable to delete that definition: {}, {}'.format(e.message, e.args), 200
 
-        # remember this delete
-        log = Interaction(term=delete_term, user=user_name, action=u'delete')
-        try:
-            db.session.add(log)
-            db.session.commit()
-        except:
-            pass
-
         return '*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
@@ -137,22 +143,20 @@ def index():
 
     if command_action == u'stats':
         # send the message
-        msg_text = '*Glossary Bot* has {}.'.format(get_stats())
+        msg_text = '*Glossary Bot* has:\n{}.'.format(get_stats())
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
         # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
     # get the definition
     entry = get_definition(full_text)
     if not entry:
+        # remember this query
+        log_query(term=full_text, user=user_name, action=u'not_found')
+
         return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
 
     # remember this query
-    log = Interaction(term=full_text, user=user_name, action=u'query')
-    try:
-        db.session.add(log)
-        db.session.commit()
-    except:
-        pass
+    log_query(term=full_text, user=user_name, action=u'found')
 
     msg_text = u'*{}*: _{}_'.format(entry.term, entry.definition)
     webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
