@@ -62,26 +62,39 @@ def index():
         set_value = set_components[1].strip()
 
         # check the database to see if the term's already defined
-        definition = Definition.query.filter_by(term=set_term).first()
-        if definition:
-            return 'Sorry, but *Gloss Bot* has already defined {} as {}'.format(set_term, definition), 200
+        entry = Definition.query.filter_by(term=set_term).first()
+        if entry:
+            return 'Sorry, but *Gloss Bot* has already defined {} as {}'.format(set_term, entry.definition), 200
 
         # save the definition in the database
-        definition = Definition(term=set_term, definition=set_value, defined_user=unicode(request.form['user_name']))
+        entry = Definition(term=set_term, definition=set_value, defined_user=unicode(request.form['user_name']))
         try:
-            db.session.add(definition)
+            db.session.add(entry)
             db.session.commit()
-        except:
-            return 'Sorry, but *Gloss Bot* is having problems with its database.', 200
+        except Exception as e:
+            return 'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
 
-        return '*Gloss Bot* has set the definition for \'{}\' to \'{}\''.format(set_term, set_value), 200
+        return '*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
             return 'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: /gloss delete EW', 200
 
         delete_term = command_params
-        return '*Gloss Bot* thinks you want to delete the definition for \'{}\''.format(delete_term), 200
+
+        # verify that the definition is in the database
+        entry = Definition.query.filter_by(term=delete_term).first()
+        if not entry:
+            return 'Sorry, but *Gloss Bot* has no definition for {}'.format(delete_term), 200
+
+        # delete the definition from the database
+        try:
+            db.session.delete(entry)
+            db.session.commit()
+        except Exception as e:
+            return 'Sorry, but *Gloss Bot* was unable to delete that definition: {}, {}'.format(e.message, e.args), 200
+
+        return '*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
         return '*/gloss <term>* to define <term>\n*/gloss set <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
@@ -97,7 +110,7 @@ def index():
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
         return 'Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
-    msg_text = u'{} wants a definition for the term \'{}\''.format(request.form['user_name'], full_text)
+    msg_text = u'{} wants a definition for the term *{}*'.format(request.form['user_name'], full_text)
     webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
     return 'Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
