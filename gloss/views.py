@@ -70,7 +70,7 @@ def index():
         return '*Gloss Bot* thinks you want to delete the definition for \'{}\''.format(delete_term), 200
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
-        return '*/gloss <term>* to define <term>\n*/gloss set <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about my operations', 200
+        return '*/gloss <term>* to define <term>\n*/gloss set <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
 
     #
     # commands that get public responses
