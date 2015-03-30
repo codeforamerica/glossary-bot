@@ -2,7 +2,7 @@ from flask import abort, current_app, request
 from . import gloss as app
 from . import db
 from models import Definition, Interaction
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from re import sub
 from requests import post
 import json
@@ -34,6 +34,21 @@ def send_webhook(channel_id=u'', text=None):
     payload = json.dumps(payload_values)
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
+
+def get_stats():
+    # gather some statistics
+    entries = db.session.query(func.count(Definition.term)).scalar()
+    definers = db.session.query(func.count(distinct(Definition.defined_user))).scalar()
+    outputs = (
+        (u'definitions for', entries, u'term', u'terms'),
+        (u'', definers, u'person has defined terms', u'people has defined terms')
+    )
+    lines = []
+    for prefix, period, singular, plural in outputs:
+        if period:
+            lines.append('{}{} {}'.format('{} '.format(prefix) if prefix else u'', period, singular if period == 1 else plural))
+    # return the message
+    return ', '.join(lines)
 
 @app.route('/', methods=['POST'])
 def index():
@@ -107,17 +122,8 @@ def index():
     channel_id = unicode(request.form['channel_id'])
 
     if command_action == u'stats':
-        # gather some statistics
-        entries = db.session.query(func.count(Definition.term)).scalar()
-        outputs = (
-            ("definitions for", entries, "term", "terms")
-        )
-        lines = []
-        for prefix, period, singular, plural in outputs:
-            if period:
-                lines.append('{} {} {}'.format(prefix, period, singular if period == 1 else plural))
         # send the message
-        msg_text = '*Glossary Bot* has {}.'.format(', '.join(lines))
+        msg_text = '*Glossary Bot* has {}.'.format(get_stats())
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
         return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
