@@ -143,8 +143,9 @@ def index():
 
     if command_action == u'stats':
         # send the message
-        msg_text = '*Glossary Bot* has:\n{}.'.format(get_stats())
+        msg_text = 'I have {}.'.format(get_stats())
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+        return
         # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
     # get the definition
