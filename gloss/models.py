@@ -14,16 +14,16 @@ class Definition(db.Model):
     def __repr__(self):
         return '<Term: {}, Definition: {}>'.format(self.term, self.definition)
 
-class Exchange(db.Model):
+class Interaction(db.Model):
     ''' Records of interactions with Glossary Bot
     '''
-    __tablename__ = 'exchanges'
+    __tablename__ = 'interactions'
     # Columns
     id = db.Column(db.Integer, primary_key=True)
-    exchange_date = db.Column(db.DateTime())
-    exchange_user = db.Column(db.Unicode())
-    exchange_term = db.Column(db.Unicode())
+    Interaction_date = db.Column(db.DateTime())
+    Interaction_user = db.Column(db.Unicode())
+    Interaction_term = db.Column(db.Unicode())
     action = db.Column(db.Unicode())
 
     def __repr__(self):
-        return '<Action: {}, Date: {}>'.format(self.action, self.exchange_date)
+        return '<Action: {}, Date: {}>'.format(self.action, self.Interaction_date)
