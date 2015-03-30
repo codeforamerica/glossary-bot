@@ -4,6 +4,7 @@ from . import db
 from models import Definition
 from re import sub
 from requests import post
+import json
 
 '''
 values posted by Slack:
@@ -30,7 +31,7 @@ def send_webhook(channel_id=u'', text=u''):
     payload_values['bot_name'] = u'Gloss Bot'
     payload_values['text'] = text
     payload_values['icon_emoji'] = u'lipstick'
-    payload = payload_template.format(**payload_values)
+    payload = json.dumps(payload_template.format(**payload_values))
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
