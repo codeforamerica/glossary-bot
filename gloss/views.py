@@ -154,11 +154,11 @@ def index():
 
     if command_action == u'set':
         set_components = command_params.split('=')
-        if len(set_components) != 2 or u'=' not in command_params:
-            return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
-
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
+
+        if len(set_components) != 2 or u'=' not in command_params or not set_term:
+            return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
 
         # check the database to see if the term's already defined
         entry = get_definition(set_term)
