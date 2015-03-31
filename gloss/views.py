@@ -136,7 +136,7 @@ def index():
         full_text = sub(r'^shh ', '', full_text)
     # also catch shh as a complete message
     if full_text == u'shh':
-        full_text = u''
+        return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can use the *shh* command like this: */gloss shh EW* or */gloss shh stats*', 200
 
     # was a command passed?
     command_components = full_text.split(' ')
