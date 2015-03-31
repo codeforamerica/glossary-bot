@@ -20,18 +20,43 @@ values posted by Slack:
     text: the text that was sent along with the command (like everything after '/gloss ')
 '''
 
-def send_webhook(channel_id=u'', text=None):
-    # don't send empty messages
-    if not text:
-        return
-
-    # build the payload json
+def get_payload_values(channel_id=u'', text=None):
     payload_values = {}
     payload_values['channel'] = channel_id
     payload_values['text'] = text
     payload_values['username'] = u'Gloss Bot'
     payload_values['icon_emoji'] = u':lipstick:'
+    return payload_values
+
+def send_webhook(channel_id=u'', text=None):
+    # don't send empty messages
+    if not text:
+        return
+
+    # get the payload json
+    payload_values = get_payload_values(channel_id=channel_id, text=text)
     payload = json.dumps(payload_values)
+    # return the response
+    return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
+
+def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#df3333'):
+    # don't send empty messages
+    if not text:
+        return
+
+    # get the standard payload dict
+    payload_values = get_payload_values(channel_id=channel_id, text=text)
+    # build the attachment dict
+    attachment_values = {}
+    attachment_values['fallback'] = fallback
+    attachment_values['pretext'] = pretext
+    attachment_values['title'] = title
+    attachment_values['text'] = text
+    attachment_values['color'] = color
+    # add the attachment dict to the payload and jsonify it
+    payload_values['attachments'] = [attachment_values]
+    payload = json.dumps(payload_values)
+
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
