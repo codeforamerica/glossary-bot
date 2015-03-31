@@ -45,7 +45,7 @@ def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretex
         return
 
     # get the standard payload dict
-    payload_values = get_payload_values(channel_id=channel_id, text=text)
+    payload_values = get_payload_values(channel_id=channel_id)
     # build the attachment dict
     attachment_values = {}
     attachment_values['fallback'] = fallback
@@ -186,7 +186,7 @@ def index():
 
     msg_text = u'*{}*: {}'.format(entry.term, entry.definition)
     fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-    pretext = '*{}* /gloss {}'.format(user_name, full_text)
+    pretext = '{} /gloss {}'.format(user_name, full_text)
     title = entry.term
     text = entry.definition
     # send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#df3333'):
