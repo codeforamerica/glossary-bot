@@ -224,7 +224,6 @@ def index():
 
     # else, send a message attachment
     else:
-        import pdb; pdb.set_trace()
         fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
         pretext = u'*{}* /gloss {}'.format(user_name, full_text)
         title = entry.term
