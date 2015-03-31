@@ -2,5 +2,6 @@ Flask==0.10.1
 Flask-Script==2.0.5
 Flask-SQLAlchemy==2.0
 gunicorn==19.3.0
+httmock==1.2.3
 psycopg2==2.6
 requests==2.6.0
