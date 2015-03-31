@@ -140,7 +140,7 @@ def index():
     user_name = unicode(request.form['user_name'])
 
     #
-    # commands that get private responses
+    # SET definition
     #
 
     if command_action == u'set':
@@ -184,6 +184,10 @@ def index():
 
             return u'*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
 
+    #
+    # DELETE definition
+    #
+
     if command_action == u'delete':
         if not command_params or command_params == u' ':
             return u'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: */gloss delete EW*', 200
@@ -204,11 +208,15 @@ def index():
 
         return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
+    #
+    # HELP
+    #
+
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
         return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
 
     #
-    # commands that get public responses
+    # STATS
     #
 
     channel_id = unicode(request.form['channel_id'])
@@ -222,6 +230,10 @@ def index():
         title = u''
         send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
         return u'', 200
+
+    #
+    # GET definition
+    #
 
     # get the definition
     entry = get_definition(full_text)
