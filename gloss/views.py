@@ -171,8 +171,15 @@ def index():
         # send the message
         msg_text = 'Since you asked, {}, I have {}.'.format(user_name, get_stats())
         send_webhook(channel_id=channel_id, text=msg_text)
+
+        stats_newline = get_stats()
+        stats_comma = sub(u'\n', u', ', stats_newline)
+        fallback = '{} /gloss stats: {}'.format(user_name, entry.term, stats_comma)
+        pretext = '{} /gloss stats'.format(user_name, full_text)
+        title = u''
+        text = stats_newline
+        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
         return u'', 200
-        # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
 
     # get the definition
     entry = get_definition(full_text)
@@ -185,24 +192,18 @@ def index():
     # remember this query
     log_query(term=full_text, user=user_name, action=u'found')
 
-    # # check to see if the definition is (or starts with) a URL; if so, send a plain payload
-    # url_check = urlparse(entry.definition)
-    # if 'http' in url_check.scheme:
-    #     msg_text = u'{} /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
-    #     send_webhook(channel_id=channel_id, text=msg_text)
+    # check to see if the definition is (or starts with) a URL; if so, send a plain payload
+    url_check = urlparse(entry.definition)
+    if 'http' in url_check.scheme:
+        msg_text = u'{} /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
+        send_webhook(channel_id=channel_id, text=msg_text)
 
-    # # else, send a message attachment
-    # else:
-    #     fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-    #     pretext = '{} /gloss {}'.format(user_name, full_text)
-    #     title = entry.term
-    #     text = entry.definition
-    #     send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
-
-    fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-    pretext = '{} /gloss {}'.format(user_name, full_text)
-    title = entry.term
-    text = entry.definition
-    send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
+    # else, send a message attachment
+    else:
+        fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+        pretext = '{} /gloss {}'.format(user_name, full_text)
+        title = entry.term
+        text = entry.definition
+        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
 
     return u'', 200
