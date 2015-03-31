@@ -3,7 +3,7 @@ from . import gloss as app
 from . import db
 from models import Definition, Interaction
 from sqlalchemy import func, distinct
-from re import sub, search, match
+from re import compile, match, search, sub
 from requests import post
 from datetime import datetime
 import json
@@ -130,12 +130,15 @@ def index():
     full_text = unicode(request.form['text'].strip())
     full_text = sub(u' +', u' ', full_text)
 
-    # if the text is prefixed with 'shh', we'll respond privately
-    private_response = match('shh ', full_text)
+    # we'll respond privately if the text is prefixed with 'shh' (or any number of s followed by any number of h)
+    # this means that Glossary Bot can't define SHH (Sonic Hedge Hog) or SSH (Secure SHell)
+    # or SH (Ovarian Stromal Hyperthecosis)
+    shh_pattern = compile(r'^s+h+ ')
+    private_response = shh_pattern.match(full_text)
     if private_response:
-        full_text = sub(r'^shh ', '', full_text)
-    # also catch shh as a complete message
-    if full_text == u'shh':
+        full_text = shh_pattern.sub('', full_text)
+    # also catch the 'shh' pattern as a complete message
+    if match(r'^s+h+$', full_text):
         return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can use the *shh* command like this: */gloss shh EW* or */gloss shh stats*', 200
 
     # was a command passed?
