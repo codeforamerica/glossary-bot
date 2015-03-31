@@ -185,19 +185,24 @@ def index():
     # remember this query
     log_query(term=full_text, user=user_name, action=u'found')
 
-    # check to see if the definition is (or starts with) a URL; if so, send a plain payload
-    url_check = urlparse(entry.definition)
-    if 'http' in url_check.scheme:
-        msg_text = u'{} /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
-        send_webhook(channel_id=channel_id, text=msg_text)
+    # # check to see if the definition is (or starts with) a URL; if so, send a plain payload
+    # url_check = urlparse(entry.definition)
+    # if 'http' in url_check.scheme:
+    #     msg_text = u'{} /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
+    #     send_webhook(channel_id=channel_id, text=msg_text)
 
-    # else, send a message attachment
-    else:
-        fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-        pretext = '{} /gloss {}'.format(user_name, full_text)
-        title = entry.term
-        text = entry.definition
-        # send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#df3333'):
-        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
+    # # else, send a message attachment
+    # else:
+    #     fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+    #     pretext = '{} /gloss {}'.format(user_name, full_text)
+    #     title = entry.term
+    #     text = entry.definition
+    #     send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
+
+    fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+    pretext = '{} /gloss {}'.format(user_name, full_text)
+    title = entry.term
+    text = entry.definition
+    send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
 
     return u'', 200
