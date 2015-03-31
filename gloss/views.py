@@ -134,6 +134,9 @@ def index():
     private_response = match('shh ', full_text)
     if private_response:
         full_text = sub(r'^shh ', '', full_text)
+    # also catch shh as a complete message
+    if full_text == u'shh':
+        full_text = u''
 
     # was a command passed?
     command_components = full_text.split(' ')
