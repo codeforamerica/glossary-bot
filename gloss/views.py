@@ -44,7 +44,7 @@ def get_stats():
     outputs = (
         (u'definitions for', entries, u'term', u'terms'),
         (u'', definers, u'person has defined terms', u'people have defined terms'),
-        (u'People have asked for definitions', queries, u'time', u'times')
+        (u'I\'ve been asked for definitions', queries, u'time', u'times')
     )
     lines = []
     for prefix, period, singular, plural in outputs:
@@ -160,7 +160,7 @@ def index():
         # remember this query
         log_query(term=full_text, user=user_name, action=u'found')
 
-        msg_text = u'*{}*: _{}_'.format(entry.term, entry.definition)
+        msg_text = u'*{}*: {}'.format(entry.term, entry.definition)
         webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
         return u'', 200
         # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
