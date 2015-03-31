@@ -6,6 +6,7 @@ from sqlalchemy import func, distinct
 from re import sub
 from requests import post
 from urlparse import urlparse
+from datetime import datetime
 import json
 
 '''
@@ -135,17 +136,34 @@ def index():
         # check the database to see if the term's already defined
         entry = get_definition(set_term)
         if entry:
-            return 'Sorry, but *Gloss Bot* has already defined *{}* as *{}*'.format(set_term, entry.definition), 200
+            if set_term != entry.term or set_value != entry.definition:
+                # update the definition in the database
+                last_term = entry.term
+                last_value = entry.definition
+                entry.term = set_term
+                entry.definition = set_value
+                entry.creation_date = datetime.utcnow()
+                try:
+                    db.session.add(entry)
+                    db.session.commit()
+                except Exception as e:
+                    return 'Sorry, but *Gloss Bot* was unable to update that definition: {}, {}'.format(e.message, e.args), 200
 
-        # save the definition in the database
-        entry = Definition(term=set_term, definition=set_value, user=user_name)
-        try:
-            db.session.add(entry)
-            db.session.commit()
-        except Exception as e:
-            return 'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
+                return '*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, set_value, last_term, last_value), 200
 
-        return '*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
+            else:
+                return '*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
+
+        else:
+            # save the definition in the database
+            entry = Definition(term=set_term, definition=set_value, user=user_name)
+            try:
+                db.session.add(entry)
+                db.session.commit()
+            except Exception as e:
+                return 'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
+
+            return '*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
