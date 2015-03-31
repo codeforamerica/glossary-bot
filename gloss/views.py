@@ -130,6 +130,11 @@ def index():
     full_text = unicode(request.form['text'].strip())
     full_text = sub(u' +', u' ', full_text)
 
+    # if the text is prefixed with 'shh', we'll respond privately
+    private_response = match('shh ', full_text)
+    if private_response:
+        full_text = sub(r'^shh ', '', full_text)
+
     # was a command passed?
     command_components = full_text.split(' ')
     command_action = command_components[0]
@@ -217,7 +222,7 @@ def index():
     #
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
-        return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
+        return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations\n*/gloss shh <command>* to get a private response', 200
 
     #
     # STATS
@@ -226,14 +231,18 @@ def index():
     channel_id = unicode(request.form['channel_id'])
 
     if command_action == u'stats':
-        # send the message
         stats_newline = u'I have {}'.format(get_stats())
         stats_comma = sub(u'\n', u', ', stats_newline)
-        fallback = u'{} /gloss stats: {}'.format(user_name, stats_comma)
-        pretext = u'*{}* /gloss stats'.format(user_name, full_text)
-        title = u''
-        send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
-        return u'', 200
+        if not private_response:
+            # send the message
+            fallback = u'{} /gloss stats: {}'.format(user_name, stats_comma)
+            pretext = u'*{}* /gloss stats'.format(user_name, full_text)
+            title = u''
+            send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
+            return u'', 200
+
+        else:
+            return stats_comma, 200
 
     #
     # GET definition
@@ -250,11 +259,13 @@ def index():
     # remember this query
     log_query(term=full_text, user=user_name, action=u'found')
 
-    image_url = get_image_url(entry.definition)
     fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-    pretext = u'*{}* /gloss {}'.format(user_name, full_text)
-    title = entry.term
-    text = entry.definition
-    send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
-
-    return u'', 200
+    if not private_response:
+        image_url = get_image_url(entry.definition)
+        pretext = u'*{}* /gloss {}'.format(user_name, full_text)
+        title = entry.term
+        text = entry.definition
+        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
+        return u'', 200
+    else:
+        return fallback, 200
