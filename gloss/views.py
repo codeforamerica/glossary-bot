@@ -3,9 +3,8 @@ from . import gloss as app
 from . import db
 from models import Definition, Interaction
 from sqlalchemy import func, distinct
-from re import sub
+from re import sub, search, match
 from requests import post
-from urlparse import urlparse
 from datetime import datetime
 import json
 
@@ -45,7 +44,7 @@ def send_webhook(channel_id=u'', text=None):
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
-def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373'):
+def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373', image_url=None):
     ''' Send a webhook with an attachment, for a more richly-formatted message.
         see https://api.slack.com/docs/attachments
     '''
@@ -64,12 +63,26 @@ def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretex
     attachment_values['title'] = title
     attachment_values['text'] = text
     attachment_values['color'] = color
+    attachment_values['image_url'] = image_url
     # add the attachment dict to the payload and jsonify it
     payload_values['attachments'] = [attachment_values]
     payload = json.dumps(payload_values)
 
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
+
+def get_image_url(text):
+    ''' Extract an image url from the passed text. If there are multiple image urls,
+        only the first one will be returned.
+    '''
+    if 'http' not in text:
+        return None
+
+    for chunk in text.split(' '):
+        if match('http', text) and search(r'[gif|jpg|jpeg|png|bmp]$', text):
+            return chunk
+
+    return None
 
 def get_stats():
     ''' Gather and return some statistics
@@ -216,18 +229,12 @@ def index():
     # remember this query
     log_query(term=full_text, user=user_name, action=u'found')
 
-    # check to see if the definition is (or starts with) a URL; if so, send a plain payload
-    url_check = urlparse(entry.definition)
-    if 'http' in url_check.scheme:
-        msg_text = u'*{}* /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
-        send_webhook(channel_id=channel_id, text=msg_text)
-
-    # else, send a message attachment
-    else:
-        fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-        pretext = u'*{}* /gloss {}'.format(user_name, full_text)
-        title = entry.term
-        text = entry.definition
-        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
+    image_url = get_image_url(entry.definition)
+    fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+    pretext = u'*{}* /gloss {}'.format(user_name, full_text)
+    title = entry.term
+    text = entry.definition
+    import pdb; pdb.set_trace()
+    send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
 
     return u'', 200
