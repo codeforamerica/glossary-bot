@@ -185,6 +185,12 @@ def index():
     log_query(term=full_text, user=user_name, action=u'found')
 
     msg_text = u'*{}*: {}'.format(entry.term, entry.definition)
-    webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
+    fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+    pretext = '*{}* /gloss {}'.format(user_name, full_text)
+    title = entry.term
+    text = entry.definition
+    # send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#df3333'):
+    webhook_response = send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
+    # webhook_response = send_webhook(channel_id=channel_id, text=msg_text)
     return u'', 200
     # return '(debug) Response from the webhook to #{}/{}: {}/{}'.format(unicode(request.form['channel_name']), channel_id, webhook_response.status_code, webhook_response.content), 200
