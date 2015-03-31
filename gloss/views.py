@@ -40,17 +40,17 @@ def send_webhook(channel_id=u'', text=None):
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
-def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#df3333'):
+def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373'):
     # don't send empty messages
     if not text:
         return
 
     # get the standard payload dict
-    payload_values = get_payload_values(channel_id=channel_id)
+    payload_values = get_payload_values(channel_id=channel_id, text=pretext)
     # build the attachment dict
     attachment_values = {}
     attachment_values['fallback'] = fallback
-    attachment_values['pretext'] = pretext
+    attachment_values['pretext'] = None
     attachment_values['title'] = title
     attachment_values['text'] = text
     attachment_values['color'] = color
@@ -172,7 +172,7 @@ def index():
         stats_newline = 'I have {}'.format(get_stats())
         stats_comma = sub(u'\n', u', ', stats_newline)
         fallback = '{} /gloss stats: {}'.format(user_name, stats_comma)
-        pretext = '{} /gloss stats'.format(user_name, full_text)
+        pretext = '*{}* /gloss stats'.format(user_name, full_text)
         title = u''
         text = stats_newline
         send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
@@ -198,7 +198,7 @@ def index():
     # else, send a message attachment
     else:
         fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-        pretext = '{} /gloss {}'.format(user_name, full_text)
+        pretext = '*{}* /gloss {}'.format(user_name, full_text)
         title = entry.term
         text = entry.definition
         send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
