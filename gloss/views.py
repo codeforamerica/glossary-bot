@@ -116,6 +116,10 @@ def get_definition(term):
     '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
 
+#
+# ROUTES
+#
+
 @app.route('/', methods=['POST'])
 def index():
     # verify that the request is authorized
