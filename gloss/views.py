@@ -43,7 +43,7 @@ def get_stats():
     queries = db.session.query(func.count(Interaction.action)).scalar()
     outputs = (
         (u'definitions for', entries, u'term', u'terms'),
-        (u'', definers, u'person has defined terms', u'people has defined terms'),
+        (u'', definers, u'person has defined terms', u'people have defined terms'),
         (u'People have asked for definitions', queries, u'time', u'times')
     )
     lines = []
