@@ -234,7 +234,6 @@ def index():
     pretext = u'*{}* /gloss {}'.format(user_name, full_text)
     title = entry.term
     text = entry.definition
-    import pdb; pdb.set_trace()
     send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
 
     return u'', 200
