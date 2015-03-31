@@ -169,12 +169,9 @@ def index():
 
     if command_action == u'stats':
         # send the message
-        msg_text = 'Since you asked, {}, I have {}.'.format(user_name, get_stats())
-        send_webhook(channel_id=channel_id, text=msg_text)
-
-        stats_newline = get_stats()
+        stats_newline = 'I have {}'.format(get_stats())
         stats_comma = sub(u'\n', u', ', stats_newline)
-        fallback = '{} /gloss stats: {}'.format(user_name, entry.term, stats_comma)
+        fallback = '{} /gloss stats: {}'.format(user_name, stats_comma)
         pretext = '{} /gloss stats'.format(user_name, full_text)
         title = u''
         text = stats_newline
