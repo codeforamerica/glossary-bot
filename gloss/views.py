@@ -219,7 +219,7 @@ def index():
     # check to see if the definition is (or starts with) a URL; if so, send a plain payload
     url_check = urlparse(entry.definition)
     if 'http' in url_check.scheme:
-        msg_text = u'{} /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
+        msg_text = u'*{}* /gloss *{}*: {}'.format(user_name, entry.term, entry.definition)
         send_webhook(channel_id=channel_id, text=msg_text)
 
     # else, send a message attachment
