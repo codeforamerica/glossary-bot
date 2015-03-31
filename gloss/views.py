@@ -85,9 +85,9 @@ def get_stats():
     lines = []
     for prefix, period, singular, plural in outputs:
         if period:
-            lines.append('{}{} {}'.format('{} '.format(prefix) if prefix else u'', period, singular if period == 1 else plural))
+            lines.append(u'{}{} {}'.format(u'{} '.format(prefix) if prefix else u'', period, singular if period == 1 else plural))
     # return the message
-    return '\n'.join(lines)
+    return u'\n'.join(lines)
 
 def log_query(term, user, action):
     ''' Log a query into the interactions table
@@ -111,12 +111,12 @@ def index():
 
     # strip excess spaces from the text
     full_text = unicode(request.form['text'].strip())
-    full_text = sub(' +', ' ', full_text)
+    full_text = sub(u' +', u' ', full_text)
 
     # was a command passed?
     command_components = full_text.split(' ')
     command_action = command_components[0]
-    command_params = ' '.join(command_components[1:])
+    command_params = u' '.join(command_components[1:])
 
     # get the user name
     user_name = unicode(request.form['user_name'])
@@ -128,7 +128,7 @@ def index():
     if command_action == u'set':
         set_components = command_params.split('=')
         if len(set_components) != 2 or u'=' not in command_params:
-            return 'Sorry, but *Gloss Bot* didn\'t understand your command. A set command should look like this: */gloss set EW = Eligibility Worker*', 200
+            return u'Sorry, but *Gloss Bot* didn\'t understand your command. A set command should look like this: */gloss set EW = Eligibility Worker*', 200
 
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
@@ -148,12 +148,12 @@ def index():
                     db.session.add(entry)
                     db.session.commit()
                 except Exception as e:
-                    return 'Sorry, but *Gloss Bot* was unable to update that definition: {}, {}'.format(e.message, e.args), 200
+                    return u'Sorry, but *Gloss Bot* was unable to update that definition: {}, {}'.format(e.message, e.args), 200
 
-                return '*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, set_value, last_term, last_value), 200
+                return u'*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, set_value, last_term, last_value), 200
 
             else:
-                return '*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
+                return u'*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
 
         else:
             # save the definition in the database
@@ -162,32 +162,32 @@ def index():
                 db.session.add(entry)
                 db.session.commit()
             except Exception as e:
-                return 'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
+                return u'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
 
-            return '*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
+            return u'*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
 
     if command_action == u'delete':
         if not command_params or command_params == u' ':
-            return 'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: */gloss delete EW*', 200
+            return u'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: */gloss delete EW*', 200
 
         delete_term = command_params
 
         # verify that the definition is in the database
         entry = get_definition(delete_term)
         if not entry:
-            return 'Sorry, but *Gloss Bot* has no definition for *{}*'.format(delete_term), 200
+            return u'Sorry, but *Gloss Bot* has no definition for *{}*'.format(delete_term), 200
 
         # delete the definition from the database
         try:
             db.session.delete(entry)
             db.session.commit()
         except Exception as e:
-            return 'Sorry, but *Gloss Bot* was unable to delete that definition: {}, {}'.format(e.message, e.args), 200
+            return u'Sorry, but *Gloss Bot* was unable to delete that definition: {}, {}'.format(e.message, e.args), 200
 
-        return '*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
+        return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
-        return '*/gloss <term>* to define <term>\n*/gloss set <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
+        return u'*/gloss <term>* to define <term>\n*/gloss set <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
 
     #
     # commands that get public responses
@@ -197,10 +197,10 @@ def index():
 
     if command_action == u'stats':
         # send the message
-        stats_newline = 'I have {}'.format(get_stats())
+        stats_newline = u'I have {}'.format(get_stats())
         stats_comma = sub(u'\n', u', ', stats_newline)
-        fallback = '{} /gloss stats: {}'.format(user_name, stats_comma)
-        pretext = '*{}* /gloss stats'.format(user_name, full_text)
+        fallback = u'{} /gloss stats: {}'.format(user_name, stats_comma)
+        pretext = u'*{}* /gloss stats'.format(user_name, full_text)
         title = u''
         send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
         return u'', 200
@@ -211,7 +211,7 @@ def index():
         # remember this query
         log_query(term=full_text, user=user_name, action=u'not_found')
 
-        return 'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
+        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
 
     # remember this query
     log_query(term=full_text, user=user_name, action=u'found')
@@ -224,8 +224,9 @@ def index():
 
     # else, send a message attachment
     else:
-        fallback = '{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-        pretext = '*{}* /gloss {}'.format(user_name, full_text)
+        import pdb; pdb.set_trace()
+        fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+        pretext = u'*{}* /gloss {}'.format(user_name, full_text)
         title = entry.term
         text = entry.definition
         send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
