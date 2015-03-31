@@ -22,6 +22,8 @@ values posted by Slack:
 '''
 
 def get_payload_values(channel_id=u'', text=None):
+    ''' Get a dict describing a standard webhook
+    '''
     payload_values = {}
     payload_values['channel'] = channel_id
     payload_values['text'] = text
@@ -30,6 +32,8 @@ def get_payload_values(channel_id=u'', text=None):
     return payload_values
 
 def send_webhook(channel_id=u'', text=None):
+    ''' Send a standard webhook
+    '''
     # don't send empty messages
     if not text:
         return
@@ -41,11 +45,16 @@ def send_webhook(channel_id=u'', text=None):
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
 def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373'):
+    ''' Send a webhook with an attachment, for a more richly-formatted message.
+        see https://api.slack.com/docs/attachments
+    '''
     # don't send empty messages
     if not text:
         return
 
     # get the standard payload dict
+    # :NOTE: sending text defined as 'pretext' to the standard payload and leaving
+    #        'pretext' in the attachment empty. so that I can use markdown styling.
     payload_values = get_payload_values(channel_id=channel_id, text=pretext)
     # build the attachment dict
     attachment_values = {}
@@ -174,8 +183,7 @@ def index():
         fallback = '{} /gloss stats: {}'.format(user_name, stats_comma)
         pretext = '*{}* /gloss stats'.format(user_name, full_text)
         title = u''
-        text = stats_newline
-        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title)
+        send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
         return u'', 200
 
     # get the definition
