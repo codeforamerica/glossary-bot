@@ -18,6 +18,12 @@ def make_shell_context():
     return dict(app=app, db=db, Definition=Definition, Interaction=Interaction)
 
 @manager.command
+def runtests():
+    import unittest
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
+
+@manager.command
 def dropdb():
     if prompt_bool("Are you sure you want to lose all your data?"):
         db.drop_all()
