@@ -142,6 +142,7 @@ def index():
                 last_value = entry.definition
                 entry.term = set_term
                 entry.definition = set_value
+                entry.user = user_name
                 entry.creation_date = datetime.utcnow()
                 try:
                     db.session.add(entry)
