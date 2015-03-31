@@ -131,6 +131,11 @@ def index():
     command_action = command_components[0]
     command_params = u' '.join(command_components[1:])
 
+    # if there's no recognized command action and the message contains an '=', process it as a set
+    if '=' in full_text and command_action not in [u'set', u'delete', u'help', u'?', u'stats']:
+        command_action = u'set'
+        command_params = full_text
+
     # get the user name
     user_name = unicode(request.form['user_name'])
 
@@ -141,7 +146,7 @@ def index():
     if command_action == u'set':
         set_components = command_params.split('=')
         if len(set_components) != 2 or u'=' not in command_params:
-            return u'Sorry, but *Gloss Bot* didn\'t understand your command. A set command should look like this: */gloss set EW = Eligibility Worker*', 200
+            return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
 
         set_term = set_components[0].strip()
         set_value = set_components[1].strip()
@@ -200,7 +205,7 @@ def index():
         return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
-        return u'*/gloss <term>* to define <term>\n*/gloss set <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
+        return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations', 200
 
     #
     # commands that get public responses
@@ -224,7 +229,7 @@ def index():
         # remember this query
         log_query(term=full_text, user=user_name, action=u'not_found')
 
-        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss set {term} = <definition>*'.format(term=full_text), 200
+        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=full_text), 200
 
     # remember this query
     log_query(term=full_text, user=user_name, action=u'found')
