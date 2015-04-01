@@ -29,12 +29,6 @@ class BotTestCase(unittest.TestCase):
         self.db.drop_all()
         self.app_context.pop()
 
-    def fake_incoming_webhook_response(self, url, request):
-        ''' A fake response from Slack's Incoming Webhook integration
-        '''
-        if 'hooks.example.com' in url.geturl():
-            return response(200, u'', {'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html', 'Date': 'Tue, 31 Mar 2015 22:34:36 GMT', 'Server': 'Apache', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'Vary': 'Accept-Encoding', 'X-Frame-Options': 'SAMEORIGIN', 'Content-Length': 2, 'Connection': 'keep-alive'})
-
     def test_app_exists(self):
         ''' Verify that the app exists
         '''
