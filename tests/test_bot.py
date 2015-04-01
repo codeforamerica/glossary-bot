@@ -6,6 +6,7 @@ from os import environ
 from flask import current_app
 from gloss import create_app, db
 from gloss.models import Definition, Interaction
+import json
 
 class BotTestCase(unittest.TestCase):
 
@@ -27,6 +28,12 @@ class BotTestCase(unittest.TestCase):
         self.db.session.close()
         self.db.drop_all()
         self.app_context.pop()
+
+    def fake_incoming_webhook_response(self, url, request):
+        ''' A fake response from Slack's Incoming Webhook integration
+        '''
+        if 'hooks.example.com' in url.geturl():
+            return response(200, u'', {'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html', 'Date': 'Tue, 31 Mar 2015 22:34:36 GMT', 'Server': 'Apache', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'Vary': 'Accept-Encoding', 'X-Frame-Options': 'SAMEORIGIN', 'Content-Length': 2, 'Connection': 'keep-alive'})
 
     def test_app_exists(self):
         ''' Verify that the app exists
@@ -56,7 +63,7 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.term, u'EW')
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
 
-    def test_set_definition_with_lots_of_spaces(self):
+    def test_set_definition_with_lots_of_whitespace(self):
         ''' Verify that excess whitespace is trimmed when parsing the set command.
         '''
         self.client.post('/', data={'token': u'meowser_token', 'text': u'     EW   =    Eligibility      Worker  ', 'user_name': u'glossie', 'channel_id': u'123456'})
@@ -66,6 +73,77 @@ class BotTestCase(unittest.TestCase):
         self.assertIsNotNone(definition_check)
         self.assertEqual(definition_check.term, u'EW')
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
+
+    def test_get_definition(self):
+        ''' Verify that we can succesfully get a definition from the bot
+        '''
+        # set & test a definition
+        self.client.post('/', data={'token': u'meowser_token', 'text': u'EW = Eligibility Worker', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'Eligibility Worker')
+
+        # capture the bot's POST to the incoming webhook and test its content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                self.assertIsNotNone(payload['username'])
+                self.assertIsNotNone(payload['text'])
+                self.assertTrue(u'glossie' in payload['text'])
+                self.assertTrue(u'gloss EW' in payload['text'])
+                self.assertEqual(payload['channel'], u'123456')
+                self.assertIsNotNone(payload['icon_emoji'])
+
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertEqual(attachment['title'], u'EW')
+                self.assertEqual(attachment['text'], u'Eligibility Worker')
+                self.assertIsNotNone(attachment['color'])
+                self.assertIsNotNone(attachment['fallback'])
+                return response(200)
+
+        # send a POST to the bot to request the definition
+        with HTTMock(response_content):
+            self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+    def test_get_definition_with_image(self):
+        ''' Verify that we can get a properly formatted definition with an image from the bot
+        '''
+        # set & test a definition
+        self.client.post('/', data={'token': u'meowser_token', 'text': u'EW = http://example.com/ew.gif', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'http://example.com/ew.gif')
+
+        # capture the bot's POST to the incoming webhook and test its content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                self.assertIsNotNone(payload['username'])
+                self.assertIsNotNone(payload['text'])
+                self.assertTrue(u'glossie' in payload['text'])
+                self.assertTrue(u'gloss EW' in payload['text'])
+                self.assertEqual(payload['channel'], u'123456')
+                self.assertIsNotNone(payload['icon_emoji'])
+
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertEqual(attachment['title'], u'EW')
+                self.assertEqual(attachment['text'], u'http://example.com/ew.gif')
+                self.assertEqual(attachment['image_url'], u'http://example.com/ew.gif')
+                self.assertIsNotNone(attachment['color'])
+                self.assertIsNotNone(attachment['fallback'])
+                return response(200)
+
+        # send a POST to the bot to request the definition
+        with HTTMock(response_content):
+            self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
 
     def test_delete_definition(self):
         ''' Verify that a definition can be deleted from the database
@@ -85,7 +163,42 @@ class BotTestCase(unittest.TestCase):
         definition_check = self.db.session.query(Definition).filter(filter).first()
         self.assertIsNone(definition_check)
 
+    def test_get_stats(self):
+        ''' Verify that stats are properly returned by the bot
+        '''
+        # set and get a definition to generate some stats
+        self.client.post('/', data={'token': u'meowser_token', 'text': u'EW = Eligibility Worker', 'user_name': u'glossie', 'channel_id': u'123456'})
+        self.client.post('/', data={'token': u'meowser_token', 'text': u'shh EW', 'user_name': u'glossie', 'channel_id': u'123456'})
 
+        # capture the bot's POST to the incoming webhook and test its content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                self.assertIsNotNone(payload['username'])
+                self.assertIsNotNone(payload['text'])
+                self.assertTrue(u'glossie' in payload['text'])
+                self.assertTrue(u'gloss stats' in payload['text'])
+                self.assertEqual(payload['channel'], u'123456')
+                self.assertIsNotNone(payload['icon_emoji'])
+
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertIsNotNone(attachment['title'])
+                self.assertTrue(u'I have definitions for 1 term' in attachment['text'])
+                self.assertTrue(u'1 person has defined terms' in attachment['text'])
+                self.assertTrue(u'I\'ve been asked for definitions 1 time' in attachment['text'])
+                self.assertIsNotNone(attachment['color'])
+                self.assertIsNotNone(attachment['fallback'])
+                return response(200)
+
+        # send a POST to the bot to request the definition
+        with HTTMock(response_content):
+            self.client.post('/', data={'token': u'meowser_token', 'text': u'stats', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+    def test_get_quiet_definition(self):
+        ''' Verify that the bot will send a quiet definition when told to do so
+        '''
+        self.assertTrue(True)
 
 
 
