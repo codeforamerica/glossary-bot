@@ -33,27 +33,38 @@ class BotTestCase(unittest.TestCase):
         return self.client.post('/', data={'token': u'meowser_token', 'text': text, 'user_name': u'glossie', 'channel_id': u'123456'})
 
     def test_app_exists(self):
-        ''' Verify that the app exists
+        ''' The app exists
         '''
         self.assertFalse(current_app is None)
 
     def test_unauthorized_access(self):
-        ''' Verify that the app rejects unauthorized access
+        ''' The app rejects unauthorized access
         '''
         robo_response = self.client.post('/', data={'token': 'woofer_token'})
         self.assertEqual(robo_response.status_code, 401)
 
     def test_authorized_access(self):
-        ''' Verify that the app accepts authorized access
+        ''' The app accepts authorized access
         '''
         robo_response = self.post_command(u'')
         self.assertEqual(robo_response.status_code, 200)
 
     def test_set_definition(self):
-        ''' Verify that a definition set via a POST is recorded in the database
+        ''' A definition set via a POST is recorded in the database
         '''
         robo_response = self.post_command(u'EW = Eligibility Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
 
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'Eligibility Worker')
+
+    def test_set_definition_with_set_keyword(self):
+        ''' A definition set via a POST is recorded in the database
+        '''
+        robo_response = self.post_command(u'set EW = Eligibility Worker')
         self.assertTrue(u'has set the definition' in robo_response.data)
 
         filter = Definition.term == u'EW'
@@ -63,10 +74,9 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
 
     def test_set_definition_with_lots_of_whitespace(self):
-        ''' Verify that excess whitespace is trimmed when parsing the set command.
+        ''' Excess whitespace is trimmed when parsing the set command.
         '''
         robo_response = self.post_command(u'     EW   =    Eligibility      Worker  ')
-
         self.assertTrue(u'has set the definition' in robo_response.data)
 
         filter = Definition.term == u'EW'
@@ -75,8 +85,44 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.term, u'EW')
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
 
+    def test_reset_definition(self):
+        ''' Setting a definition for an existing term overwrites the original
+        '''
+        robo_response = self.post_command(u'EW = Eligibility Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'Eligibility Worker')
+
+        robo_response = self.post_command(u'EW = Egg Weathervane')
+        self.assertTrue(u'overwriting the previous entry' in robo_response.data)
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'Egg Weathervane')
+
+    def test_set_identical_definition(self):
+        ''' Correct response for setting an identical definition for an existing term
+        '''
+        robo_response = self.post_command(u'EW = Eligibility Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'Eligibility Worker')
+
+        robo_response = self.post_command(u'EW = Eligibility Worker')
+        self.assertTrue(u'already knows that the definition for' in robo_response.data)
+
     def test_get_definition(self):
-        ''' Verify that we can succesfully set and get a definition from the bot
+        ''' We can succesfully set and get a definition from the bot
         '''
         # set & test a definition
         self.post_command(u'EW = Eligibility Worker')
@@ -111,7 +157,7 @@ class BotTestCase(unittest.TestCase):
             fake_response = self.post_command(u'EW')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
-        # verify that the request was recorded in the interactions table
+        # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
         self.assertEqual(interaction_check.user, u'glossie')
@@ -119,7 +165,7 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(interaction_check.action, u'found')
 
     def test_get_definition_with_special_characters(self):
-        ''' Verify that we can succesfully set and get a definition with special characters from the bot
+        ''' We can succesfully set and get a definition with special characters from the bot
         '''
         # set & test a definition
         self.post_command(u'EW = ™¥∑ø∂∆∫')
@@ -154,7 +200,7 @@ class BotTestCase(unittest.TestCase):
             fake_response = self.post_command(u'EW')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
-        # verify that the request was recorded in the interactions table
+        # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
         self.assertEqual(interaction_check.user, u'glossie')
@@ -165,9 +211,10 @@ class BotTestCase(unittest.TestCase):
         ''' Test requesting a non-existent definition
         '''
         # send a POST to the bot to request the definition
-        self.post_command(u'EW')
+        robo_response = self.post_command(u'EW')
+        self.assertTrue(u'has no definition for' in robo_response.data)
 
-        # verify that the request was recorded in the interactions table
+        # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
         self.assertEqual(interaction_check.user, u'glossie')
@@ -175,7 +222,7 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(interaction_check.action, u'not_found')
 
     def test_get_definition_with_image(self):
-        ''' Verify that we can get a properly formatted definition with an image from the bot
+        ''' We can get a properly formatted definition with an image from the bot
         '''
         # set & test a definition
         self.post_command(u'EW = http://example.com/ew.gif')
@@ -212,7 +259,7 @@ class BotTestCase(unittest.TestCase):
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
     def test_delete_definition(self):
-        ''' Verify that a definition can be deleted from the database
+        ''' A definition can be deleted from the database
         '''
         # first set a value in the database and verify that it's there
         self.post_command(u'EW = Eligibility Worker')
@@ -224,13 +271,14 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
 
         # now delete the value and verify that it's gone
-        self.post_command(u'delete EW')
+        robo_response = self.post_command(u'delete EW')
+        self.assertTrue(u'has deleted the definition for' in robo_response.data)
 
         definition_check = self.db.session.query(Definition).filter(filter).first()
         self.assertIsNone(definition_check)
 
     def test_get_stats(self):
-        ''' Verify that stats are properly returned by the bot
+        ''' Stats are properly returned by the bot
         '''
         # set and get a definition to generate some stats
         self.post_command(u'EW = Eligibility Worker')
@@ -262,8 +310,24 @@ class BotTestCase(unittest.TestCase):
             fake_response = self.post_command(u'stats')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
+    def test_get_help(self):
+        ''' Help is properly returned by the bot
+        '''
+        # testing different chunks of help text with each response
+        robo_response = self.post_command(u'help')
+        self.assertTrue(u'to define <term>' in robo_response.data)
+
+        robo_response = self.post_command(u'?')
+        self.assertTrue(u'to set the definition for a term' in robo_response.data)
+
+        robo_response = self.post_command(u'')
+        self.assertTrue(u'to delete the definition for a term' in robo_response.data)
+
+        robo_response = self.post_command(u' ')
+        self.assertTrue(u'to see this message' in robo_response.data)
+
     def test_get_quiet_definition(self):
-        ''' Verify that the bot will send a quiet definition when told to do so
+        ''' The bot will send a quiet definition when told to do so
         '''
         # set & test a definition
         self.post_command(u'EW = Eligibility Worker')
@@ -279,9 +343,51 @@ class BotTestCase(unittest.TestCase):
         self.assertTrue(u'glossie' in robo_response.data)
         self.assertTrue(u'EW: Eligibility Worker' in robo_response.data)
 
-        # verify that the request was recorded in the interactions table
+        # send POSTs with variations of 'shh' to make sure that they're caught
+        robo_response = self.post_command(u'ssh EW')
+        self.assertTrue(u'glossie' in robo_response.data)
+        self.assertTrue(u'EW: Eligibility Worker' in robo_response.data)
+
+        robo_response = self.post_command(u'sh EW')
+        self.assertTrue(u'glossie' in robo_response.data)
+        self.assertTrue(u'EW: Eligibility Worker' in robo_response.data)
+
+        # at least one request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
         self.assertEqual(interaction_check.user, u'glossie')
         self.assertEqual(interaction_check.term, u'EW')
         self.assertEqual(interaction_check.action, u'found')
+
+    def test_incomplete_shh_command(self):
+        ''' We get the right error back when sending shh and nothing else
+        '''
+        robo_response = self.post_command(u'shh')
+        self.assertTrue(u'You can use the *shh* command like this' in robo_response.data)
+
+    def test_bad_set_commands(self):
+        ''' We get the right error back when sending bad set commands
+        '''
+        robo_response = self.post_command(u'set')
+        self.assertTrue(u'You can set definitions like this' in robo_response.data)
+
+        robo_response = self.post_command(u'EW =')
+        self.assertTrue(u'You can set definitions like this' in robo_response.data)
+
+        robo_response = self.post_command(u'=')
+        self.assertTrue(u'You can set definitions like this' in robo_response.data)
+
+        robo_response = self.post_command(u'EW = Eligibility = Worker')
+        self.assertTrue(u'You can set definitions like this' in robo_response.data)
+
+        robo_response = self.post_command(u'= = =')
+        self.assertTrue(u'You can set definitions like this' in robo_response.data)
+
+    def test_bad_delete_commands(self):
+        ''' We get the right error back when sending bad delete commands
+        '''
+        robo_response = self.post_command(u'delete')
+        self.assertTrue(u'A delete command should look like this' in robo_response.data)
+
+if __name__ == '__main__':
+    unittest.main()
