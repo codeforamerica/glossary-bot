@@ -101,7 +101,8 @@ class BotTestCase(unittest.TestCase):
 
         # send a POST to the bot to request the definition
         with HTTMock(response_content):
-            self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
+            fake_response = self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
     def test_get_definition_with_image(self):
         ''' Verify that we can get a properly formatted definition with an image from the bot
@@ -137,7 +138,8 @@ class BotTestCase(unittest.TestCase):
 
         # send a POST to the bot to request the definition
         with HTTMock(response_content):
-            self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
+            fake_response = self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
     def test_delete_definition(self):
         ''' Verify that a definition can be deleted from the database
@@ -187,7 +189,8 @@ class BotTestCase(unittest.TestCase):
 
         # send a POST to the bot to request the definition
         with HTTMock(response_content):
-            self.client.post('/', data={'token': u'meowser_token', 'text': u'stats', 'user_name': u'glossie', 'channel_id': u'123456'})
+            fake_response = self.client.post('/', data={'token': u'meowser_token', 'text': u'stats', 'user_name': u'glossie', 'channel_id': u'123456'})
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
     def test_get_quiet_definition(self):
         ''' Verify that the bot will send a quiet definition when told to do so
