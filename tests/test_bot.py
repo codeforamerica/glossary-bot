@@ -49,7 +49,9 @@ class BotTestCase(unittest.TestCase):
     def test_set_definition(self):
         ''' Verify that a definition set via a POST is recorded in the database
         '''
-        self.client.post('/', data={'token': u'meowser_token', 'text': u'EW = Eligibility Worker', 'user_name': u'glossie', 'channel_id': u'123456'})
+        robo_response = self.client.post('/', data={'token': u'meowser_token', 'text': u'EW = Eligibility Worker', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+        self.assertTrue(u'has set the definition' in robo_response.data)
 
         filter = Definition.term == u'EW'
         definition_check = self.db.session.query(Definition).filter(filter).first()
@@ -60,7 +62,9 @@ class BotTestCase(unittest.TestCase):
     def test_set_definition_with_lots_of_whitespace(self):
         ''' Verify that excess whitespace is trimmed when parsing the set command.
         '''
-        self.client.post('/', data={'token': u'meowser_token', 'text': u'     EW   =    Eligibility      Worker  ', 'user_name': u'glossie', 'channel_id': u'123456'})
+        robo_response = self.client.post('/', data={'token': u'meowser_token', 'text': u'     EW   =    Eligibility      Worker  ', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+        self.assertTrue(u'has set the definition' in robo_response.data)
 
         filter = Definition.term == u'EW'
         definition_check = self.db.session.query(Definition).filter(filter).first()
@@ -103,6 +107,26 @@ class BotTestCase(unittest.TestCase):
         with HTTMock(response_content):
             fake_response = self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+
+        # verify that the request was recorded in the interactions table
+        interaction_check = self.db.session.query(Interaction).first()
+        self.assertIsNotNone(interaction_check)
+        self.assertEqual(interaction_check.user, u'glossie')
+        self.assertEqual(interaction_check.term, u'EW')
+        self.assertEqual(interaction_check.action, u'found')
+
+    def test_request_nonexistent_definition(self):
+        ''' Test requesting a non-existent definition
+        '''
+        # send a POST to the bot to request the definition
+        self.client.post('/', data={'token': u'meowser_token', 'text': u'EW', 'user_name': u'glossie', 'channel_id': u'123456'})
+
+        # verify that the request was recorded in the interactions table
+        interaction_check = self.db.session.query(Interaction).first()
+        self.assertIsNotNone(interaction_check)
+        self.assertEqual(interaction_check.user, u'glossie')
+        self.assertEqual(interaction_check.term, u'EW')
+        self.assertEqual(interaction_check.action, u'not_found')
 
     def test_get_definition_with_image(self):
         ''' Verify that we can get a properly formatted definition with an image from the bot
