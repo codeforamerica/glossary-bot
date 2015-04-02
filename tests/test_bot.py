@@ -305,7 +305,7 @@ class BotTestCase(unittest.TestCase):
                 self.assertIsNotNone(attachment['fallback'])
                 return response(200)
 
-        # send a POST to the bot to request the definition
+        # send a POST to the bot to request stats
         with HTTMock(response_content):
             fake_response = self.post_command(u'stats')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
@@ -388,6 +388,143 @@ class BotTestCase(unittest.TestCase):
         '''
         robo_response = self.post_command(u'delete')
         self.assertTrue(u'A delete command should look like this' in robo_response.data)
+
+    def test_urls_wrapped_in_angle_brackets(self):
+        ''' Non-image URLs are wrapped in angle brackets
+        '''
+        #
+        # test multiple inputs and check for wrapped URLs in the database
+        robo_response = self.post_command(u'AW = Aligibility Worker http://example.com/aw.html')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'AW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'AW')
+        self.assertTrue('<http://example.com/aw.html>' in definition_check.definition)
+
+        robo_response = self.post_command(u'BW = Bligibility http://example.com/bw Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'BW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'BW')
+        self.assertTrue('<http://example.com/bw>' in definition_check.definition)
+
+        robo_response = self.post_command(u'CW = http://example.com/cw/> Cligibility Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'CW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'CW')
+        self.assertTrue('<http://example.com/cw/>' in definition_check.definition)
+
+        robo_response = self.post_command(u'DW = http://example.com/dw.html')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'DW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'DW')
+        self.assertTrue('<http://example.com/dw.html>' in definition_check.definition)
+
+        robo_response = self.post_command(u'EW = http://example.com/ew/')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertTrue('<http://example.com/ew/>' in definition_check.definition)
+
+        robo_response = self.post_command(u'FW = <http://example.com/fw/')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'FW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'FW')
+        self.assertTrue('<http://example.com/fw/>' in definition_check.definition)
+
+        robo_response = self.post_command(u'IW = example.com/cool/stuff/index.html Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'IW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'IW')
+        self.assertTrue('<example.com/cool/stuff/index.html>' in definition_check.definition)
+
+        robo_response = self.post_command(u'JW = Worker Jligibility example.gov.cx/meowser/')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'JW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'JW')
+        self.assertTrue('<example.gov.cx/meowser/>' in definition_check.definition)
+
+        robo_response = self.post_command(u'KW = example.gov.asia')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'KW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'KW')
+        self.assertTrue('<example.gov.asia>' in definition_check.definition)
+
+        #
+        # make sure image URLs don't get altered
+        robo_response = self.post_command(u'GW = http://example.com/gw.gif')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'GW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'GW')
+        self.assertTrue('http://example.com/gw.gif' in definition_check.definition)
+        self.assertTrue('<http://example.com/gw.gif>' not in definition_check.definition)
+
+        robo_response = self.post_command(u'HW = Hligibility http://example.com/hw.jpeg Worker')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'HW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'HW')
+        self.assertTrue('http://example.com/hw.jpeg' in definition_check.definition)
+        self.assertTrue('<http://example.com/hw.jpeg>' not in definition_check.definition)
+
+    def test_bad_image_urls_rejected(self):
+        ''' Bad image URLs are not sent in the attachment's image_url parameter
+        '''
+        # set some definitions with bad image URLs
+        self.post_command(u'EW = http://kittens.gif')
+        self.post_command(u'FW = httpdoggie.jpeg')
+        self.post_command(u'GW = http://stupid/goldfish.bmp')
+        self.post_command(u'HW = http://s.mlkshk-cdn.com/r/13ILU')
+
+        # capture the bot's POSTs to the incoming webhook and test the content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertIsNone(attachment['image_url'])
+                return response(200)
+
+        # send POSTs to the bot to request the definitions
+        with HTTMock(response_content):
+            fake_response = self.post_command(u'EW')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+            fake_response = self.post_command(u'FW')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+            fake_response = self.post_command(u'GW')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+            fake_response = self.post_command(u'HW')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
 if __name__ == '__main__':
     unittest.main()

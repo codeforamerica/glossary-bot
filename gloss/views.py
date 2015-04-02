@@ -3,7 +3,7 @@ from . import gloss as app
 from . import db
 from models import Definition, Interaction
 from sqlalchemy import func, distinct
-from re import compile, match, search, sub
+from re import compile, match, search, sub, UNICODE
 from requests import post
 from datetime import datetime
 import json
@@ -79,10 +79,50 @@ def get_image_url(text):
         return None
 
     for chunk in text.split(' '):
-        if match('http', text) and search(r'[gif|jpg|jpeg|png|bmp]$', text):
+        if verify_image_url(text) and verify_url(text):
             return chunk
 
     return None
+
+def verify_url(text):
+    ''' verify that the passed text is a URL
+
+        Adapted from @adamrofer's Python port of @dperini's pattern here: https://gist.github.com/dperini/729294
+    '''
+    url_pattern = compile(u'^(?:(?:https?)://|)(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)))(?::\d{2,5})?(?:/\S*)?$', UNICODE)
+    return url_pattern.match(text)
+
+def verify_image_url(text):
+    ''' Verify that the passed text is an image URL.
+
+        We're verifying image URLs for inclusion in Slack's Incoming Webhook integration, which
+        requires a scheme at the beginning (http(s)) and a file extention at the end to render
+        correctly. So, a URL which passes verify_url() (like example.com/kitten.gif) might not
+        pass this test. If you need to test that the URL is both valid AND an image suitable for
+        the Incoming Webhook integration, run it through both verify_url() and verify_image_url().
+    '''
+    return (match('http', text) and search(r'[gif|jpg|jpeg|png|bmp]$', text))
+
+def unwrap_text(text):
+    ''' Unwrap angle brackets from the passed text, if they're there
+    '''
+    return sub(r'^<|>$', '', text)
+
+def wrap_single_url(text):
+    ''' Wrap the passed text in angle brackets if it's a URL
+    '''
+    # don't wrap image URLs or non URLs
+    verify_text = unwrap_text(text)
+    if not verify_image_url(verify_text) and verify_url(verify_text):
+        # unwrap, then wrap, so we don't double-wrap
+        return u'<{}>'.format(verify_text)
+
+    return text
+
+def wrap_urls(text):
+    ''' Wrap non-image URLs in the passed text in angle brackets
+    '''
+    return ' '.join([wrap_single_url(chunk) for chunk in text.split(' ')])
 
 def get_stats():
     ''' Gather and return some statistics
@@ -165,6 +205,9 @@ def index():
 
         if len(set_components) != 2 or u'=' not in command_params or not set_term or not set_value:
             return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
+
+        # wrap any non-image URLs in the definition in angle brackets
+        set_value = wrap_urls(set_value)
 
         # check the database to see if the term's already defined
         entry = get_definition(set_term)
