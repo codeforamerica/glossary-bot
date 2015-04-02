@@ -475,6 +475,19 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.term, u'KW')
         self.assertTrue('<example.gov.asia>' in definition_check.definition)
 
+        robo_response = self.post_command(u'LW = gov.asia innocuous.tv jumpy.dude fun.com')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'LW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'LW')
+        self.assertTrue('<gov.asia>' in definition_check.definition)
+        self.assertTrue('<innocuous.tv>' in definition_check.definition)
+        self.assertTrue('<fun.com>' in definition_check.definition)
+        self.assertTrue('jumpy.dude' in definition_check.definition)
+        self.assertTrue('<jumpy.dude>' not in definition_check.definition)
+
         #
         # make sure image URLs don't get altered
         robo_response = self.post_command(u'GW = http://example.com/gw.gif')
