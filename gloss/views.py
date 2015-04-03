@@ -114,7 +114,6 @@ def wrap_single_url(text):
     # don't wrap image URLs or non URLs
     verify_text = unwrap_text(text)
     if not verify_image_url(verify_text) and verify_url(verify_text):
-        # unwrap, then wrap, so we don't double-wrap
         return u'<{}>'.format(verify_text)
 
     return text
@@ -206,9 +205,6 @@ def index():
         if len(set_components) != 2 or u'=' not in command_params or not set_term or not set_value:
             return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
 
-        # wrap any non-image URLs in the definition in angle brackets
-        set_value = wrap_urls(set_value)
-
         # check the database to see if the term's already defined
         entry = get_definition(set_term)
         if entry:
@@ -226,10 +222,10 @@ def index():
                 except Exception as e:
                     return u'Sorry, but *Gloss Bot* was unable to update that definition: {}, {}'.format(e.message, e.args), 200
 
-                return u'*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, set_value, last_term, last_value), 200
+                return u'*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, wrap_urls(set_value), last_term, wrap_urls(last_value)), 200
 
             else:
-                return u'*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
+                return u'*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, wrap_urls(set_value)), 200
 
         else:
             # save the definition in the database
@@ -240,7 +236,7 @@ def index():
             except Exception as e:
                 return u'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
 
-            return u'*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
+            return u'*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, wrap_urls(set_value)), 200
 
     #
     # DELETE definition
@@ -264,7 +260,7 @@ def index():
         except Exception as e:
             return u'Sorry, but *Gloss Bot* was unable to delete that definition: {}, {}'.format(e.message, e.args), 200
 
-        return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
+        return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, wrap_urls(entry.definition)), 200
 
     #
     # HELP
@@ -317,4 +313,4 @@ def index():
         send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
         return u'', 200
     else:
-        return fallback, 200
+        return u'{} /gloss {}: {}'.format(user_name, entry.term, wrap_urls(entry.definition)), 200
