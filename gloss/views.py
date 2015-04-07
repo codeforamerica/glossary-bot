@@ -44,7 +44,7 @@ def send_webhook(channel_id=u'', text=None):
     # return the response
     return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
 
-def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373', image_url=None):
+def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373', image_url=None, mrkdwn_in=[]):
     ''' Send a webhook with an attachment, for a more richly-formatted message.
         see https://api.slack.com/docs/attachments
     '''
@@ -64,6 +64,8 @@ def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretex
     attachment_values['text'] = text
     attachment_values['color'] = color
     attachment_values['image_url'] = image_url
+    if len(mrkdwn_in):
+        attachment_values['mrkdwn_in'] = mrkdwn_in
     # add the attachment dict to the payload and jsonify it
     payload_values['attachments'] = [attachment_values]
     payload = json.dumps(payload_values)
@@ -125,7 +127,7 @@ def get_learnings(rich=False, how_many=12):
     ''' Gather and return some recent definitions
     '''
     definitions = db.session.query(Definition).order_by(Definition.creation_date.desc()).limit(how_many).all()
-    rich_char = u'\'' if rich else u''
+    rich_char = u'*' if rich else u''
     return 'Recently defined terms: {}'.format(', '.join([u'{}{}{}'.format(rich_char, item.term, rich_char) for item in definitions]))
 
 def log_query(term, user, action):
@@ -288,7 +290,7 @@ def index():
             fallback = u'{} /gloss learnings: {}'.format(user_name, learnings_plain_text)
             pretext = u'*{}* /gloss learnings'.format(user_name)
             title = u''
-            send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title)
+            send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title, mrkdwn_in=["text"])
             return u'', 200
 
         else:
