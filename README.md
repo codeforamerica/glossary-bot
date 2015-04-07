@@ -1,7 +1,7 @@
 # Glossary Bot
 This is a simple web app designed to be used as a [Slack integration](https://slack.com/integrations). Specifically, it responds to POSTs created by the Slack *Slash Commands* integration and responds with messages to Slack's *Incoming Webhooks* integration.
 
-Glossary Bot maintains a glossary of terms created by its users, responds to requests with definitions.
+Glossary Bot maintains a glossary of terms created by its users, and responds to requests with definitions.
 
 ![DemoGif](static/gloss-bot-demo.gif)
 
@@ -39,7 +39,7 @@ Create the production [PostgreSQL](https://github.com/codeforamerica/howto/blob/
 createdb glossary-bot
 ```
 
-Copy `env.sample` to `.env` and make sure that the value of `DATABASE_URL` matches the name of the database you created in the last step:
+Copy `env.sample` to `.env` and make sure that the value of `DATABASE_URL` in `.env` matches the name of the database you created in the last step:
 
 ```
 cp env.sample .env
@@ -88,13 +88,13 @@ Glossary Bot uses two Slack integrations: [Slash Commands](https://api.slack.com
 
 Now it's time to deploy the bot to Heroku! First, make sure you've got the basics set up by following [Heroku's instructions for getting started with Python](https://devcenter.heroku.com/articles/getting-started-with-python-o).
 
-Now, create a new Heroku application with a unique name ([Heroku docs](https://devcenter.heroku.com/articles/getting-started-with-python-o#deploy-your-application-to-heroku)):
+Now, create a new Heroku application with a unique name:
 
 ```
 heroku create my-glossary-bot
 ```
 
-When you deploy your app, it'll be reachable at a URL like [https://my-glossary-bot.herokuapp.com/](#). Enter this URL into the **URL** field of the Slash Commands integration on Slack.
+When you deploy your app, it'll be reachable at a URL like [https://my-glossary-bot.herokuapp.com/](#). Enter this URL into the **URL** field of the Slash Commands integration on Slack. See the ([Heroku documentation](https://devcenter.heroku.com/articles/getting-started-with-python-o#deploy-your-application-to-heroku)) for more configuration options.
 
 To give the bot everything it needs to communicate with Slack, set the config variables you saved when you set up the Slack integrations above. The **Token** from the Slash Command integration:
 
