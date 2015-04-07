@@ -121,11 +121,12 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
-def get_learnings(how_many=10):
+def get_learnings(rich=False, how_many=12):
     ''' Gather and return some recent definitions
     '''
     definitions = db.session.query(Definition).order_by(Definition.creation_date.desc()).limit(how_many).all()
-    return 'Recently defined terms: {}'.format(', '.join([item.term for item in definitions]))
+    rich_char = u'*' if rich else u''
+    return 'Recently defined terms: {}'.format(', '.join([u'{}{}{}'.format(rich_char, item.term, rich_char) for item in definitions]))
 
 def log_query(term, user, action):
     ''' Log a query into the interactions table
@@ -253,7 +254,7 @@ def index():
     #
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
-        return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
+        return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations\n*/gloss shh <command>* to get a private response\n*/gloss learnings* to see recently defined terms\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
 
     #
     # STATS
@@ -280,17 +281,18 @@ def index():
     #
 
     if command_action == u'learnings':
-        learnings_text = get_learnings()
+        learnings_plain_text = get_learnings()
+        learnings_rich_text = get_learnings(rich=True)
         if not private_response:
             # send the message
-            fallback = u'{} /gloss learnings: {}'.format(user_name, learnings_text)
+            fallback = u'{} /gloss learnings: {}'.format(user_name, learnings_plain_text)
             pretext = u'*{}* /gloss learnings'.format(user_name)
             title = u''
-            send_webhook_with_attachment(channel_id=channel_id, text=learnings_text, fallback=fallback, pretext=pretext, title=title)
+            send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title)
             return u'', 200
 
         else:
-            return get_learnings(), 200
+            return learnings_plain_text, 200
 
     #
     # GET definition
