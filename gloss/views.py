@@ -125,7 +125,7 @@ def get_learnings(rich=False, how_many=12):
     ''' Gather and return some recent definitions
     '''
     definitions = db.session.query(Definition).order_by(Definition.creation_date.desc()).limit(how_many).all()
-    rich_char = u'*' if rich else u''
+    rich_char = u'\'' if rich else u''
     return 'Recently defined terms: {}'.format(', '.join([u'{}{}{}'.format(rich_char, item.term, rich_char) for item in definitions]))
 
 def log_query(term, user, action):
