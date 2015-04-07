@@ -82,7 +82,7 @@ Glossary Bot uses two Slack integrations: [Slash Commands](https://api.slack.com
 
 [Set up a Slash Command integration](https://my.slack.com/services/new/slash-commands). There are three critical values that you need to set or save: **Command** is the command people on slack will use to communicate with the bot. We use `/gloss`. **URL** is the public URL where the bot will live; you can fill this in after you've deployed the application to Heroku, as described below. **Token** is used to authenticate communication between Slack and the bot; save this value for when you're setting up the bot on Heroku.
 
-[Set up an Incoming Webhooks integration](https://my.slack.com/services/new/incoming-webhook). The two important values here are: **Post to Channel**, which is a default channel where public messages from the bot will appear. This default is always overridden by the bot, but you do need to have one – we created a new channel called *#testing-glossary-bot* for this purpose. Save the value of **Webhook URL**; this is the URL that the bot will POST public messages to and you'll need it when setting up Gloss Bot on Heroku.
+[Set up an Incoming Webhooks integration](https://my.slack.com/services/new/incoming-webhook). The two important values here are: **Post to Channel**, which is a default channel where public messages from the bot will appear. This default is always overridden by the bot, but you do need to have one – we created a new channel called *#testing-glossary-bot* for this purpose. Save the value of **Webhook URL**; this is the URL that the bot will POST public messages to, and you'll need it when setting up Gloss Bot on Heroku.
 
 #### Deploy on Heroku
 
@@ -94,7 +94,7 @@ Now, create a new Heroku application with a unique name ([Heroku docs](https://d
 heroku create my-glossary-bot
 ```
 
-When you deploy your app, it'll be reachable at a URL like *https://my-glossary-bot.herokuapp.com/*. Enter this URL into the **URL** field of the Slash Commands integration on Slack.
+When you deploy your app, it'll be reachable at a URL like [https://my-glossary-bot.herokuapp.com/](#). Enter this URL into the **URL** field of the Slash Commands integration on Slack.
 
 To give the bot everything it needs to communicate with Slack, set the config variables you saved when you set up the Slack integrations above. The **Token** from the Slash Command integration:
 
@@ -108,7 +108,9 @@ and the **Webhook URL** from the Incoming Webhooks integration:
 heroku config:set SLACK_WEBHOOK_URL=https://hooks.slack.com/services/1234567/1234567/1234567890
 ```
 
-Run a simple git push to deploy the application:
+You can also set these variables in the Heroku web interface.
+
+Now run a git push to deploy the application:
 
 ```
 git push heroku master
