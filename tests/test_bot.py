@@ -310,6 +310,45 @@ class BotTestCase(unittest.TestCase):
             fake_response = self.post_command(u'stats')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
+    def test_get_learnings(self):
+        ''' Learnings are properly returned by the bot
+        '''
+        # set some values in the database
+        self.post_command(u'EW = Eligibility Worker')
+        self.post_command(u'FW = Fligibility Worker')
+        self.post_command(u'GW = Gligibility Worker')
+        self.post_command(u'HW = Hligibility Worker')
+        self.post_command(u'IW = Iligibility Worker')
+
+        # capture the bot's POST to the incoming webhook and test its content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                self.assertIsNotNone(payload['username'])
+                self.assertIsNotNone(payload['text'])
+                self.assertTrue(u'glossie' in payload['text'])
+                self.assertTrue(u'gloss learnings' in payload['text'])
+                self.assertEqual(payload['channel'], u'123456')
+                self.assertIsNotNone(payload['icon_emoji'])
+
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertIsNotNone(attachment['title'])
+                self.assertTrue(u'Recently defined terms:' in attachment['text'])
+                self.assertTrue(u'EW' in attachment['text'])
+                self.assertTrue(u'FW' in attachment['text'])
+                self.assertTrue(u'GW' in attachment['text'])
+                self.assertTrue(u'HW' in attachment['text'])
+                self.assertTrue(u'IW' in attachment['text'])
+                self.assertIsNotNone(attachment['color'])
+                self.assertIsNotNone(attachment['fallback'])
+                return response(200)
+
+        # send a POST to the bot to request learnings
+        with HTTMock(response_content):
+            fake_response = self.post_command(u'learnings')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+
     def test_get_help(self):
         ''' Help is properly returned by the bot
         '''

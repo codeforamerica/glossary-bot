@@ -121,6 +121,12 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
+def get_learnings(how_many=10):
+    ''' Gather and return some recent definitions
+    '''
+    definitions = db.session.query(Definition).order_by(Definition.creation_date.desc()).limit(how_many).all()
+    return 'Recently defined terms: {}'.format(', '.join([item.term for item in definitions]))
+
 def log_query(term, user, action):
     ''' Log a query into the interactions table
     '''
@@ -261,13 +267,30 @@ def index():
         if not private_response:
             # send the message
             fallback = u'{} /gloss stats: {}'.format(user_name, stats_comma)
-            pretext = u'*{}* /gloss stats'.format(user_name, full_text)
+            pretext = u'*{}* /gloss stats'.format(user_name)
             title = u''
             send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
             return u'', 200
 
         else:
             return stats_comma, 200
+
+    #
+    # LEARNINGS
+    #
+
+    if command_action == u'learnings':
+        learnings_text = get_learnings()
+        if not private_response:
+            # send the message
+            fallback = u'{} /gloss learnings: {}'.format(user_name, learnings_text)
+            pretext = u'*{}* /gloss learnings'.format(user_name)
+            title = u''
+            send_webhook_with_attachment(channel_id=channel_id, text=learnings_text, fallback=fallback, pretext=pretext, title=title)
+            return u'', 200
+
+        else:
+            return get_learnings(), 200
 
     #
     # GET definition
