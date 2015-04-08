@@ -298,14 +298,14 @@ def index():
     #
 
     if command_action == u'learnings':
-        sort_order = None
+        sort_order = u''
         if command_params == u'random':
             sort_order = command_params
         learnings_plain_text, learnings_rich_text = get_learnings(sort_order=sort_order)
         if not private_response:
             # send the message
-            fallback = u'{} /gloss learnings: {}'.format(user_name, learnings_plain_text)
-            pretext = u'*{}* /gloss learnings'.format(user_name)
+            fallback = u'{} /gloss learnings {}: {}'.format(user_name, sort_order, learnings_plain_text)
+            pretext = u'*{}* /gloss learnings {}'.format(user_name, sort_order)
             title = u''
             send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title, mrkdwn_in=["text"])
             return u'', 200
