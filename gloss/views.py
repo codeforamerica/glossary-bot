@@ -127,8 +127,12 @@ def get_learnings(how_many=12, sort_order=u'recent'):
     ''' Gather and return some recent definitions
     '''
     order_func = Definition.creation_date.desc()
+    prefix_singluar = u'I recently learned the definition for'
+    prefix_plural = u'I recently learned definitions for'
     if sort_order == u'random':
         order_func = func.random()
+        prefix_singluar = u'I know the definition for'
+        prefix_plural = u'I know definitions for'
 
     definitions = db.session.query(Definition).order_by(order_func).limit(how_many).all()
 
@@ -136,7 +140,7 @@ def get_learnings(how_many=12, sort_order=u'recent'):
         no_definitions_text = u'I haven\'t learned any definitions yet.'
         return no_definitions_text, no_definitions_text
 
-    wording = u'I recently learned definitions for' if len(definitions) > 1 else u'I recently learned the definition for'
+    wording = prefix_plural if len(definitions) > 1 else prefix_singluar
     plain_text = '{}: {}'.format(wording, ', '.join([item.term for item in definitions]))
     rich_text = '{}: {}'.format(wording, ', '.join([u'*{}*'.format(item.term) for item in definitions]))
     return plain_text, rich_text
