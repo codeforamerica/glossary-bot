@@ -354,7 +354,7 @@ class BotTestCase(unittest.TestCase):
         '''
         # ask for learnings before any values have been set
         robo_response = self.post_command(u'shh learnings')
-        self.assertTrue(u'I haven\t learned any definitions yet.' in robo_response.data)
+        self.assertTrue(u'I haven\'t learned any definitions yet.' in robo_response.data)
 
         # when one value has been set
         self.post_command(u'EW = Eligibility Worker')
