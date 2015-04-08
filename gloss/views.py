@@ -123,16 +123,23 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
-def get_learnings(rich=False, how_many=12):
+def get_learnings(how_many=12, sort_order=u'recent'):
     ''' Gather and return some recent definitions
     '''
-    definitions = db.session.query(Definition).order_by(Definition.creation_date.desc()).limit(how_many).all()
+    order_func = Definition.creation_date.desc()
+    if sort_order == u'random':
+        order_func = func.random()
+
+    definitions = db.session.query(Definition).order_by(order_func).limit(how_many).all()
+
     if not definitions:
-        return u'I haven\'t learned any definitions yet.'
+        no_definitions_text = u'I haven\'t learned any definitions yet.'
+        return no_definitions_text, no_definitions_text
 
     wording = u'I recently learned definitions for' if len(definitions) > 1 else u'I recently learned the definition for'
-    rich_char = u'*' if rich else u''
-    return '{}: {}'.format(wording, ', '.join([u'{}{}{}'.format(rich_char, item.term, rich_char) for item in definitions]))
+    plain_text = '{}: {}'.format(wording, ', '.join([item.term for item in definitions]))
+    rich_text = '{}: {}'.format(wording, ', '.join([u'*{}*'.format(item.term) for item in definitions]))
+    return plain_text, rich_text
 
 def log_query(term, user, action):
     ''' Log a query into the interactions table
@@ -287,8 +294,10 @@ def index():
     #
 
     if command_action == u'learnings':
-        learnings_plain_text = get_learnings()
-        learnings_rich_text = get_learnings(rich=True)
+        sort_order = None
+        if command_params == u'random':
+            sort_order = command_params
+        learnings_plain_text, learnings_rich_text = get_learnings(sort_order=sort_order)
         if not private_response:
             # send the message
             fallback = u'{} /gloss learnings: {}'.format(user_name, learnings_plain_text)

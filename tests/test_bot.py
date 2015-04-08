@@ -349,21 +349,65 @@ class BotTestCase(unittest.TestCase):
             fake_response = self.post_command(u'learnings')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
+    def test_random_learnings(self):
+        ''' Learnings are returned in random order when requested
+        '''
+        # set some values in the database
+        self.post_command(u'EW = Eligibility Worker')
+        self.post_command(u'FW = Fligibility Worker')
+        self.post_command(u'GW = Gligibility Worker')
+        self.post_command(u'HW = Hligibility Worker')
+        self.post_command(u'IW = Iligibility Worker')
+        self.post_command(u'JW = Jligibility Worker')
+        self.post_command(u'KW = Kligibility Worker')
+        self.post_command(u'LW = Lligibility Worker')
+        self.post_command(u'MW = Mligibility Worker')
+        self.post_command(u'NW = Nligibility Worker')
+        self.post_command(u'OW = Oligibility Worker')
+        self.post_command(u'PW = Pligibility Worker')
+        self.post_command(u'QW = Qligibility Worker')
+        self.post_command(u'RW = Rligibility Worker')
+        self.post_command(u'SW = Sligibility Worker')
+
+        # get chronological learnings
+        robo_response = self.post_command(u'shh learnings')
+        self.assertEqual(robo_response.status_code, 200)
+        control = robo_response.data
+
+        # get a few random learnings
+        robo_response = self.post_command(u'shh learnings random')
+        self.assertEqual(robo_response.status_code, 200)
+        random1 = robo_response.data
+
+        robo_response = self.post_command(u'shh learnings random')
+        self.assertEqual(robo_response.status_code, 200)
+        random2 = robo_response.data
+
+        robo_response = self.post_command(u'shh learnings random')
+        self.assertEqual(robo_response.status_code, 200)
+        random3 = robo_response.data
+
+        # if they're all equal, we've failed
+        self.assertFalse(control == random1 and control == random2 and control == random3)
+
     def test_learnings_language(self):
         ''' Language describing learnings is numerically accurate
         '''
         # ask for learnings before any values have been set
         robo_response = self.post_command(u'shh learnings')
+        self.assertEqual(robo_response.status_code, 200)
         self.assertTrue(u'I haven\'t learned any definitions yet.' in robo_response.data)
 
         # when one value has been set
         self.post_command(u'EW = Eligibility Worker')
         robo_response = self.post_command(u'shh learnings')
+        self.assertEqual(robo_response.status_code, 200)
         self.assertTrue(u'I recently learned the definition for' in robo_response.data)
 
         # when more than one value has been set
         self.post_command(u'FW = Fligibility Worker')
         robo_response = self.post_command(u'shh learnings')
+        self.assertEqual(robo_response.status_code, 200)
         self.assertTrue(u'I recently learned definitions for' in robo_response.data)
 
     def test_get_help(self):
