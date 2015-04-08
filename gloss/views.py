@@ -127,8 +127,12 @@ def get_learnings(rich=False, how_many=12):
     ''' Gather and return some recent definitions
     '''
     definitions = db.session.query(Definition).order_by(Definition.creation_date.desc()).limit(how_many).all()
+    if not definitions:
+        return u'I haven\t learned any definitions yet.'
+
+    wording = u'I recently learned definitions for' if len(definitions) > 1 else u'I recently learned the definition for'
     rich_char = u'*' if rich else u''
-    return 'I recently learned definitions for: {}'.format(', '.join([u'{}{}{}'.format(rich_char, item.term, rich_char) for item in definitions]))
+    return '{}: {}'.format(wording, ', '.join([u'{}{}{}'.format(rich_char, item.term, rich_char) for item in definitions]))
 
 def log_query(term, user, action):
     ''' Log a query into the interactions table

@@ -334,7 +334,7 @@ class BotTestCase(unittest.TestCase):
                 attachment = payload['attachments'][0]
                 self.assertIsNotNone(attachment)
                 self.assertIsNotNone(attachment['title'])
-                self.assertTrue(u'I recently learned definitions for:' in attachment['text'])
+                self.assertTrue(u'I recently learned definitions for' in attachment['text'])
                 self.assertTrue(u'EW' in attachment['text'])
                 self.assertTrue(u'FW' in attachment['text'])
                 self.assertTrue(u'GW' in attachment['text'])
@@ -348,6 +348,23 @@ class BotTestCase(unittest.TestCase):
         with HTTMock(response_content):
             fake_response = self.post_command(u'learnings')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+
+    def test_learnings_language(self):
+        ''' Language describing learnings is numerically accurate
+        '''
+        # ask for learnings before any values have been set
+        robo_response = self.post_command(u'shh learnings')
+        self.assertTrue(u'I haven\t learned any definitions yet.' in robo_response.data)
+
+        # when one value has been set
+        self.post_command(u'EW = Eligibility Worker')
+        robo_response = self.post_command(u'shh learnings')
+        self.assertTrue(u'I recently learned the definition for' in robo_response.data)
+
+        # when more than one value has been set
+        self.post_command(u'FW = Fligibility Worker')
+        robo_response = self.post_command(u'shh learnings')
+        self.assertTrue(u'I recently learned definitions for' in robo_response.data)
 
     def test_get_help(self):
         ''' Help is properly returned by the bot
