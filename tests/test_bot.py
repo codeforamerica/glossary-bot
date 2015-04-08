@@ -334,7 +334,7 @@ class BotTestCase(unittest.TestCase):
                 attachment = payload['attachments'][0]
                 self.assertIsNotNone(attachment)
                 self.assertIsNotNone(attachment['title'])
-                self.assertTrue(u'Recently defined terms:' in attachment['text'])
+                self.assertTrue(u'I recently learned definitions for:' in attachment['text'])
                 self.assertTrue(u'EW' in attachment['text'])
                 self.assertTrue(u'FW' in attachment['text'])
                 self.assertTrue(u'GW' in attachment['text'])
