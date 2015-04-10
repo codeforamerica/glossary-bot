@@ -190,7 +190,7 @@ def index():
     command_params = u' '.join(command_components[1:])
 
     # if there's no recognized command action and the message contains an '=', process it as a set
-    if '=' in full_text and command_action not in [u'set', u'delete', u'help', u'?', u'stats']:
+    if '=' in full_text and command_action not in [u'set', u'delete', u'help', u'?', u'stats', u'learnings']:
         command_action = u'set'
         command_params = full_text
 
