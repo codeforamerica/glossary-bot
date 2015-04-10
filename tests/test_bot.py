@@ -85,6 +85,19 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.term, u'EW')
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
 
+    def test_set_definition_with_multiple_equals_signs(self):
+        ''' A set with multiple equals signs considers all equals signs after
+            the first to be part of the definition
+        '''
+        robo_response = self.post_command(u'EW = Eligibility Worker = Cool Person=Yeah')
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'EW'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'EW')
+        self.assertEqual(definition_check.definition, u'Eligibility Worker = Cool Person=Yeah')
+
     def test_reset_definition(self):
         ''' Setting a definition for an existing term overwrites the original
         '''
@@ -475,9 +488,6 @@ class BotTestCase(unittest.TestCase):
         self.assertTrue(u'You can set definitions like this' in robo_response.data)
 
         robo_response = self.post_command(u'=')
-        self.assertTrue(u'You can set definitions like this' in robo_response.data)
-
-        robo_response = self.post_command(u'EW = Eligibility = Worker')
         self.assertTrue(u'You can set definitions like this' in robo_response.data)
 
         robo_response = self.post_command(u'= = =')

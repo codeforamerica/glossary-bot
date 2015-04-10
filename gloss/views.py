@@ -205,6 +205,10 @@ def index():
         set_components = command_params.split('=')
         set_term = set_components[0].strip()
         set_value = set_components[1].strip() if len(set_components) > 1 else u''
+        # if there was more than one '=', re-combine everything after the first '=' into set_value
+        if len(set_components) > 2:
+            set_value = u'='.join(set_components[1:]).strip()
+            set_components = [set_term, set_value]
 
         if len(set_components) != 2 or u'=' not in command_params or not set_term or not set_value:
             return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
