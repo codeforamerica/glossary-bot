@@ -2,6 +2,7 @@ from os import environ, path
 from gloss import create_app, db
 from gloss.models import Definition, Interaction
 from flask.ext.script import Manager, prompt_bool
+from flask.ext.migrate import Migrate, MigrateCommand
 
 # grab environment variables from the .env file if it exists
 if path.exists('.env'):
@@ -12,6 +13,9 @@ if path.exists('.env'):
 
 app = create_app(environ)
 manager = Manager(app)
+
+migrate = Migrate(app, db)
+manager.add_command('db', MigrateCommand)
 
 @manager.shell
 def make_shell_context():
