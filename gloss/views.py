@@ -271,7 +271,7 @@ def index():
     #
 
     if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
-        return u'*/gloss <term>* to define <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get statistics about Gloss Bot operations\n*/gloss learnings* to see recently defined terms\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
+        return u'*/gloss <term>* to define <term> (public)\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to get usage statistics (public)\n*/gloss learnings* to see recently defined terms (public)\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
 
     #
     # STATS
