@@ -31,19 +31,6 @@ def get_payload_values(channel_id=u'', text=None):
     payload_values['icon_emoji'] = u':lipstick:'
     return payload_values
 
-def send_webhook(channel_id=u'', text=None):
-    ''' Send a standard webhook
-    '''
-    # don't send empty messages
-    if not text:
-        return
-
-    # get the payload json
-    payload_values = get_payload_values(channel_id=channel_id, text=text)
-    payload = json.dumps(payload_values)
-    # return the response
-    return post(current_app.config['SLACK_WEBHOOK_URL'], data=payload)
-
 def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretext=u'', title=u'', color=u'#f33373', image_url=None, mrkdwn_in=[]):
     ''' Send a webhook with an attachment, for a more richly-formatted message.
         see https://api.slack.com/docs/attachments
