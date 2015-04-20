@@ -159,27 +159,28 @@ def index():
     # strip excess spaces from the text
     full_text = unicode(request.form['text'].strip())
     full_text = sub(u' +', u' ', full_text)
+    command_text = full_text
 
     # we'll respond privately if the text is prefixed with 'shh' (or any number of s followed by any number of h)
     # this means that Glossary Bot can't define SHH (Sonic Hedge Hog) or SSH (Secure SHell)
     # or SH (Ovarian Stromal Hyperthecosis)
     shh_pattern = compile(r'^s+h+ ')
-    private_response = shh_pattern.match(full_text)
+    private_response = shh_pattern.match(command_text)
     if private_response:
-        full_text = shh_pattern.sub('', full_text)
+        command_text = shh_pattern.sub('', command_text)
     # also catch the 'shh' pattern as a complete message
-    if match(r'^s+h+$', full_text):
+    if match(r'^s+h+$', command_text):
         return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can use the *shh* command like this: */gloss shh EW* or */gloss shh stats*', 200
 
     # was a command passed?
-    command_components = full_text.split(' ')
+    command_components = command_text.split(' ')
     command_action = command_components[0]
     command_params = u' '.join(command_components[1:])
 
     # if there's no recognized command action and the message contains an '=', process it as a set
-    if '=' in full_text and command_action not in [u'set', u'delete', u'help', u'?', u'stats', u'learnings']:
+    if '=' in command_text and command_action not in [u'set', u'delete', u'help', u'?', u'stats', u'learnings']:
         command_action = u'set'
-        command_params = full_text
+        command_params = command_text
 
     # get the user name
     user_name = unicode(request.form['user_name'])
@@ -257,7 +258,7 @@ def index():
     # HELP
     #
 
-    if command_action == u'help' or command_action == u'?' or full_text == u'' or full_text == u' ':
+    if command_action == u'help' or command_action == u'?' or command_text == u'' or command_text == u' ':
         return u'*/gloss <term>* to show the definition for <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to show usage statistics\n*/gloss learnings* to show recently defined terms\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
 
     #
@@ -305,20 +306,20 @@ def index():
     #
 
     # get the definition
-    entry = get_definition(full_text)
+    entry = get_definition(command_text)
     if not entry:
         # remember this query
-        log_query(term=full_text, user=user_name, action=u'not_found')
+        log_query(term=command_text, user=user_name, action=u'not_found')
 
-        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=full_text), 200
+        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=command_text), 200
 
     # remember this query
-    log_query(term=full_text, user=user_name, action=u'found')
+    log_query(term=command_text, user=user_name, action=u'found')
 
     fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
     if not private_response:
         image_url = get_image_url(entry.definition)
-        pretext = u'*{}* /gloss {}'.format(user_name, full_text)
+        pretext = u'*{}* /gloss {}'.format(user_name, command_text)
         title = entry.term
         text = entry.definition
         send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
