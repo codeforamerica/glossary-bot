@@ -61,18 +61,6 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.term, u'EW')
         self.assertEqual(definition_check.definition, u'Eligibility Worker')
 
-    def test_set_definition_with_set_keyword(self):
-        ''' A definition set via a POST is recorded in the database
-        '''
-        robo_response = self.post_command(u'set EW = Eligibility Worker')
-        self.assertTrue(u'has set the definition' in robo_response.data)
-
-        filter = Definition.term == u'EW'
-        definition_check = self.db.session.query(Definition).filter(filter).first()
-        self.assertIsNotNone(definition_check)
-        self.assertEqual(definition_check.term, u'EW')
-        self.assertEqual(definition_check.definition, u'Eligibility Worker')
-
     def test_set_definition_with_lots_of_whitespace(self):
         ''' Excess whitespace is trimmed when parsing the set command.
         '''
@@ -428,7 +416,7 @@ class BotTestCase(unittest.TestCase):
         '''
         # testing different chunks of help text with each response
         robo_response = self.post_command(u'help')
-        self.assertTrue(u'to define <term>' in robo_response.data)
+        self.assertTrue(u'to show the definition for a term' in robo_response.data)
 
         robo_response = self.post_command(u'?')
         self.assertTrue(u'to set the definition for a term' in robo_response.data)
@@ -472,18 +460,9 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(interaction_check.term, u'EW')
         self.assertEqual(interaction_check.action, u'found')
 
-    def test_incomplete_shh_command(self):
-        ''' We get the right error back when sending shh and nothing else
-        '''
-        robo_response = self.post_command(u'shh')
-        self.assertTrue(u'You can use the *shh* command like this' in robo_response.data)
-
     def test_bad_set_commands(self):
         ''' We get the right error back when sending bad set commands
         '''
-        robo_response = self.post_command(u'set')
-        self.assertTrue(u'You can set definitions like this' in robo_response.data)
-
         robo_response = self.post_command(u'EW =')
         self.assertTrue(u'You can set definitions like this' in robo_response.data)
 
@@ -492,12 +471,6 @@ class BotTestCase(unittest.TestCase):
 
         robo_response = self.post_command(u'= = =')
         self.assertTrue(u'You can set definitions like this' in robo_response.data)
-
-    def test_bad_delete_commands(self):
-        ''' We get the right error back when sending bad delete commands
-        '''
-        robo_response = self.post_command(u'delete')
-        self.assertTrue(u'A delete command should look like this' in robo_response.data)
 
     def test_bad_image_urls_rejected(self):
         ''' Bad image URLs are not sent in the attachment's image_url parameter

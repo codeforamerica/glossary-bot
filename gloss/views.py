@@ -141,10 +141,77 @@ def log_query(term, user, action):
     except:
         pass
 
-def get_definition(term):
-    ''' Get the definition for a term from the database
+def query_definition(term):
+    ''' Query the definition for a term from the database
     '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
+
+def get_definition_and_response(command_text, user_name, channel_id, private_response):
+    ''' Get the definition for the passed term and return the appropriate responses
+    '''
+    # query the definition
+    entry = query_definition(command_text)
+    if not entry:
+        # remember this query
+        log_query(term=command_text, user=user_name, action=u'not_found')
+
+        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=command_text), 200
+
+    # remember this query
+    log_query(term=command_text, user=user_name, action=u'found')
+
+    fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+    if not private_response:
+        image_url = get_image_url(entry.definition)
+        pretext = u'*{}* /gloss {}'.format(user_name, command_text)
+        title = entry.term
+        text = entry.definition
+        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
+        return u'', 200
+    else:
+        return fallback, 200
+
+def set_definition_and_get_response(command_params, user_name):
+    ''' Set the definition for the passed parameters and return the approriate responses
+    '''
+    set_components = command_params.split('=', 1)
+    set_term = set_components[0].strip()
+    set_value = set_components[1].strip() if len(set_components) > 1 else u''
+
+    if len(set_components) != 2 or u'=' not in command_params or not set_term or not set_value:
+        return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
+
+    # check the database to see if the term's already defined
+    entry = query_definition(set_term)
+    if entry:
+        if set_term != entry.term or set_value != entry.definition:
+            # update the definition in the database
+            last_term = entry.term
+            last_value = entry.definition
+            entry.term = set_term
+            entry.definition = set_value
+            entry.user = user_name
+            entry.creation_date = datetime.utcnow()
+            try:
+                db.session.add(entry)
+                db.session.commit()
+            except Exception as e:
+                return u'Sorry, but *Gloss Bot* was unable to update that definition: {}, {}'.format(e.message, e.args), 200
+
+            return u'*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, set_value, last_term, last_value), 200
+
+        else:
+            return u'*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
+
+    # save the definition in the database
+    entry = Definition(term=set_term, definition=set_value, user=user_name)
+    try:
+        db.session.add(entry)
+        db.session.commit()
+    except Exception as e:
+        return u'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
+
+    return u'*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
 
 #
 # ROUTES
@@ -156,10 +223,28 @@ def index():
     if request.form['token'] != current_app.config['SLACK_TOKEN']:
         abort(401)
 
+    # get the user name and channel ID
+    user_name = unicode(request.form['user_name'])
+    channel_id = unicode(request.form['channel_id'])
+
     # strip excess spaces from the text
     full_text = unicode(request.form['text'].strip())
     full_text = sub(u' +', u' ', full_text)
     command_text = full_text
+
+    # if the text is a single word that's not a single-word command, treat it as a get
+    if command_text.count(u' ') is 0 and len(command_text) > 0 and command_text not in [u'stats', u'learnings', u'help', u'?', u'=']:
+        return get_definition_and_response(command_text, user_name, channel_id, False)
+
+    # was a command passed?
+    command_components = command_text.split(' ')
+    command_action = command_components[0]
+    command_params = u' '.join(command_components[1:])
+
+    # if the text contains an '=' and it's not trying to set the definition for a
+    # single-word command, treat it as a set
+    if '=' in command_text and command_action not in [u'stats', u'learnings']:
+        return set_definition_and_get_response(command_text, user_name)
 
     # we'll respond privately if the text is prefixed with 'shh' (or any number of s followed by any number of h)
     # this means that Glossary Bot can't define SHH (Sonic Hedge Hog) or SSH (Secure SHell)
@@ -168,80 +253,19 @@ def index():
     private_response = shh_pattern.match(command_text)
     if private_response:
         command_text = shh_pattern.sub('', command_text)
-    # also catch the 'shh' pattern as a complete message
-    if match(r'^s+h+$', command_text):
-        return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can use the *shh* command like this: */gloss shh EW* or */gloss shh stats*', 200
-
-    # was a command passed?
-    command_components = command_text.split(' ')
-    command_action = command_components[0]
-    command_params = u' '.join(command_components[1:])
-
-    # if there's no recognized command action and the message contains an '=', process it as a set
-    if '=' in command_text and command_action not in [u'set', u'delete', u'help', u'?', u'stats', u'learnings']:
-        command_action = u'set'
-        command_params = command_text
-
-    # get the user name
-    user_name = unicode(request.form['user_name'])
-
-    #
-    # SET definition
-    #
-
-    if command_action == u'set':
-        set_components = command_params.split('=', 1)
-        set_term = set_components[0].strip()
-        set_value = set_components[1].strip() if len(set_components) > 1 else u''
-
-        if len(set_components) != 2 or u'=' not in command_params or not set_term or not set_value:
-            return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
-
-        # check the database to see if the term's already defined
-        entry = get_definition(set_term)
-        if entry:
-            if set_term != entry.term or set_value != entry.definition:
-                # update the definition in the database
-                last_term = entry.term
-                last_value = entry.definition
-                entry.term = set_term
-                entry.definition = set_value
-                entry.user = user_name
-                entry.creation_date = datetime.utcnow()
-                try:
-                    db.session.add(entry)
-                    db.session.commit()
-                except Exception as e:
-                    return u'Sorry, but *Gloss Bot* was unable to update that definition: {}, {}'.format(e.message, e.args), 200
-
-                return u'*Gloss Bot* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*'.format(set_term, set_value, last_term, last_value), 200
-
-            else:
-                return u'*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
-
-        else:
-            # save the definition in the database
-            entry = Definition(term=set_term, definition=set_value, user=user_name)
-            try:
-                db.session.add(entry)
-                db.session.commit()
-            except Exception as e:
-                return u'Sorry, but *Gloss Bot* was unable to save that definition: {}, {}'.format(e.message, e.args), 200
-
-            return u'*Gloss Bot* has set the definition for *{}* to *{}*'.format(set_term, set_value), 200
+        command_components = command_text.split(' ')
+        command_action = command_components[0]
+        command_params = u' '.join(command_components[1:])
 
     #
     # DELETE definition
     #
 
     if command_action == u'delete':
-        if not command_params or command_params == u' ':
-            return u'Sorry, but *Gloss Bot* didn\'t understand your command. A delete command should look like this: */gloss delete EW*', 200
-
         delete_term = command_params
 
         # verify that the definition is in the database
-        entry = get_definition(delete_term)
+        entry = query_definition(delete_term)
         if not entry:
             return u'Sorry, but *Gloss Bot* has no definition for *{}*'.format(delete_term), 200
 
@@ -259,13 +283,11 @@ def index():
     #
 
     if command_action == u'help' or command_action == u'?' or command_text == u'' or command_text == u' ':
-        return u'*/gloss <term>* to show the definition for <term>\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to show usage statistics\n*/gloss learnings* to show recently defined terms\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
+        return u'*/gloss <term>* to show the definition for a term\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to show usage statistics\n*/gloss learnings* to show recently defined terms\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
 
     #
     # STATS
     #
-
-    channel_id = unicode(request.form['channel_id'])
 
     if command_action == u'stats':
         stats_newline = u'I have {}'.format(get_stats())
@@ -305,24 +327,5 @@ def index():
     # GET definition
     #
 
-    # get the definition
-    entry = get_definition(command_text)
-    if not entry:
-        # remember this query
-        log_query(term=command_text, user=user_name, action=u'not_found')
-
-        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=command_text), 200
-
-    # remember this query
-    log_query(term=command_text, user=user_name, action=u'found')
-
-    fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
-    if not private_response:
-        image_url = get_image_url(entry.definition)
-        pretext = u'*{}* /gloss {}'.format(user_name, command_text)
-        title = entry.term
-        text = entry.definition
-        send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
-        return u'', 200
-    else:
-        return fallback, 200
+    # check the definition
+    return get_definition_and_response(command_text, user_name, channel_id, private_response)
