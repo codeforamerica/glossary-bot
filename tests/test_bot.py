@@ -107,6 +107,26 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(definition_check.term, u'EW')
         self.assertEqual(definition_check.definition, u'Egg Weathervane')
 
+    def test_set_same_word_with_different_capitalization(self):
+        ''' We can't set different definitions for the same word by using different cases
+        '''
+        robo_response = self.post_command(u'lower case = NOT UPPER CASE')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'lower case'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'lower case')
+        self.assertEqual(definition_check.definition, u'NOT UPPER CASE')
+
+        robo_response = self.post_command(u'LOWER CASE = really not upper case')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'overwriting the previous entry' in robo_response.data)
+
+        robo_response = self.post_command(u'shh lower case')
+        self.assertTrue(u'LOWER CASE: really not upper case' in robo_response.data)
+
     def test_set_identical_definition(self):
         ''' Correct response for setting an identical definition for an existing term
         '''
@@ -121,6 +141,68 @@ class BotTestCase(unittest.TestCase):
 
         robo_response = self.post_command(u'EW = Eligibility Worker')
         self.assertTrue(u'already knows that the definition for' in robo_response.data)
+
+    def test_set_command_word_definitions(self):
+        ''' We can successfull set and get definitions for unreserved command words.
+        '''
+        robo_response = self.post_command(u'SHH = Sonic Hedge Hog')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'SHH'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'SHH')
+        self.assertEqual(definition_check.definition, u'Sonic Hedge Hog')
+
+        robo_response = self.post_command(u'SSH = Secure SHell')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'SSH'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'SSH')
+        self.assertEqual(definition_check.definition, u'Secure SHell')
+
+        robo_response = self.post_command(u'Delete = Remove or Obliterate')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'Delete'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'Delete')
+        self.assertEqual(definition_check.definition, u'Remove or Obliterate')
+
+        robo_response = self.post_command(u'help me = I\'m in hell')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'has set the definition' in robo_response.data)
+
+        filter = Definition.term == u'help me'
+        definition_check = self.db.session.query(Definition).filter(filter).first()
+        self.assertIsNotNone(definition_check)
+        self.assertEqual(definition_check.term, u'help me')
+        self.assertEqual(definition_check.definition, u'I\'m in hell')
+
+    def test_failed_set_command_word_definitions(self):
+        ''' We can't successfully set and get definitions for reserved command words.
+        '''
+        robo_response = self.post_command(u'Stats = Statistics')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'because it\'s a reserved term' in robo_response.data)
+
+        robo_response = self.post_command(u'help = aid')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'because it\'s a reserved term' in robo_response.data)
+
+        robo_response = self.post_command(u'LeArNiNgS = recently')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'because it\'s a reserved term' in robo_response.data)
+
+        robo_response = self.post_command(u'? = riddle me this')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u'because it\'s a reserved term' in robo_response.data)
 
     def test_get_definition(self):
         ''' We can succesfully set and get a definition from the bot

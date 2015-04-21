@@ -8,6 +8,12 @@ from requests import post
 from datetime import datetime
 import json
 
+STATS_CMDS = (u'stats',)
+RECENT_CMDS = (u'learnings',)
+HELP_CMDS = (u'help', u'?')
+SET_CMDS = (u'=',)
+DELETE_CMDS = (u'delete',)
+
 '''
 values posted by Slack:
     token: the authenticaton token from Slack; available in the integration settings.
@@ -146,7 +152,15 @@ def query_definition(term):
     '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
 
-def get_definition_and_response(command_text, user_name, channel_id, private_response):
+def get_command_action_and_params(command_text):
+    ''' Parse the passed string for a command action and parameters
+    '''
+    command_components = command_text.split(' ')
+    command_action = command_components[0].lower()
+    command_params = u' '.join(command_components[1:])
+    return command_action, command_params
+
+def query_definition_and_get_response(command_text, user_name, channel_id, private_response):
     ''' Get the definition for the passed term and return the appropriate responses
     '''
     # query the definition
@@ -178,8 +192,13 @@ def set_definition_and_get_response(command_params, user_name):
     set_term = set_components[0].strip()
     set_value = set_components[1].strip() if len(set_components) > 1 else u''
 
-    if len(set_components) != 2 or u'=' not in command_params or not set_term or not set_value:
+    # reject poorly formed set commands
+    if u'=' not in command_params or not set_term or not set_value:
         return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
+
+    # reject attempts to set reserved terms
+    if set_term.lower() in STATS_CMDS + RECENT_CMDS + HELP_CMDS:
+        return u'Sorry, but *Gloss Bot* can\'t set a definition for *{}* because it\'s a reserved term.'.format(set_term)
 
     # check the database to see if the term's already defined
     entry = query_definition(set_term)
@@ -233,35 +252,29 @@ def index():
     command_text = full_text
 
     # if the text is a single word that's not a single-word command, treat it as a get
-    if command_text.count(u' ') is 0 and len(command_text) > 0 and command_text not in [u'stats', u'learnings', u'help', u'?', u'=']:
-        return get_definition_and_response(command_text, user_name, channel_id, False)
+    if command_text.count(u' ') is 0 and len(command_text) > 0 and \
+       command_text.lower() not in STATS_CMDS + RECENT_CMDS + HELP_CMDS + SET_CMDS:
+        return query_definition_and_get_response(command_text, user_name, channel_id, False)
 
-    # was a command passed?
-    command_components = command_text.split(' ')
-    command_action = command_components[0]
-    command_params = u' '.join(command_components[1:])
-
-    # if the text contains an '=' and it's not trying to set the definition for a
-    # single-word command, treat it as a set
-    if '=' in command_text and command_action not in [u'stats', u'learnings']:
+    # if the text contains an '=', treat it as a 'set' command
+    if '=' in command_text:
         return set_definition_and_get_response(command_text, user_name)
 
-    # we'll respond privately if the text is prefixed with 'shh' (or any number of s followed by any number of h)
-    # this means that Glossary Bot can't define SHH (Sonic Hedge Hog) or SSH (Secure SHell)
-    # or SH (Ovarian Stromal Hyperthecosis)
+    # we'll respond privately if the text is prefixed with 'shh ' (or any number of s followed by any number of h)
     shh_pattern = compile(r'^s+h+ ')
     private_response = shh_pattern.match(command_text)
     if private_response:
+        # strip the 'shh' from the command text
         command_text = shh_pattern.sub('', command_text)
-        command_components = command_text.split(' ')
-        command_action = command_components[0]
-        command_params = u' '.join(command_components[1:])
+
+    # extract the command action and parameters
+    command_action, command_params = get_command_action_and_params(command_text)
 
     #
     # DELETE definition
     #
 
-    if command_action == u'delete':
+    if command_action in DELETE_CMDS:
         delete_term = command_params
 
         # verify that the definition is in the database
@@ -282,14 +295,14 @@ def index():
     # HELP
     #
 
-    if command_action == u'help' or command_action == u'?' or command_text == u'' or command_text == u' ':
+    if command_action in HELP_CMDS or command_text == u'' or command_text == u' ':
         return u'*/gloss <term>* to show the definition for a term\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to show usage statistics\n*/gloss learnings* to show recently defined terms\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
 
     #
     # STATS
     #
 
-    if command_action == u'stats':
+    if command_action in STATS_CMDS:
         stats_newline = u'I have {}'.format(get_stats())
         stats_comma = sub(u'\n', u', ', stats_newline)
         if not private_response:
@@ -304,10 +317,10 @@ def index():
             return stats_comma, 200
 
     #
-    # LEARNINGS
+    # LEARNINGS/RECENT
     #
 
-    if command_action == u'learnings':
+    if command_action in RECENT_CMDS:
         sort_order = u''
         if command_params == u'random':
             sort_order = command_params
@@ -328,4 +341,4 @@ def index():
     #
 
     # check the definition
-    return get_definition_and_response(command_text, user_name, channel_id, private_response)
+    return query_definition_and_get_response(command_text, user_name, channel_id, private_response)
