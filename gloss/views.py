@@ -134,8 +134,8 @@ def get_learnings(how_many=12, sort_order=u'recent'):
         return no_definitions_text, no_definitions_text
 
     wording = prefix_plural if len(definitions) > 1 else prefix_singluar
-    plain_text = '{}: {}'.format(wording, ', '.join([item.term for item in definitions]))
-    rich_text = '{}: {}'.format(wording, ', '.join([u'*{}*'.format(item.term) for item in definitions]))
+    plain_text = u'{}: {}'.format(wording, ', '.join([item.term for item in definitions]))
+    rich_text = u'{}: {}'.format(wording, ', '.join([u'*{}*'.format(item.term) for item in definitions]))
     return plain_text, rich_text
 
 def log_query(term, user, action):

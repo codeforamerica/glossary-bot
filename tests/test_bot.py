@@ -402,6 +402,7 @@ class BotTestCase(unittest.TestCase):
         self.post_command(u'GW = Gligibility Worker')
         self.post_command(u'HW = Hligibility Worker')
         self.post_command(u'IW = Iligibility Worker')
+        self.post_command(u'ÓW = Óligibility Worker')
 
         # capture the bot's POST to the incoming webhook and test its content
         def response_content(url, request):
@@ -423,6 +424,7 @@ class BotTestCase(unittest.TestCase):
                 self.assertTrue(u'GW' in attachment['text'])
                 self.assertTrue(u'HW' in attachment['text'])
                 self.assertTrue(u'IW' in attachment['text'])
+                self.assertTrue(u'ÓW' in attachment['text'])
                 self.assertIsNotNone(attachment['color'])
                 self.assertIsNotNone(attachment['fallback'])
                 return response(200)
