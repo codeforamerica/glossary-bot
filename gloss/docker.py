@@ -6,7 +6,10 @@ if 'DATABASE_URL' not in environ:
   port = environ.get('DB_PORT_5432_TCP_PORT', '')
   db = environ.get('DB_DATABASENAME', '')
 
-  environ['DATABASE_URL'] = "postgresql://postgres@%s/%s" % (host, db)
+  pswd = environ.get('DB_PASS', '')
+  if pswd != '': pswd = ":" + pswd
+
+  environ['DATABASE_URL'] = "postgresql://postgres%s@%s/%s" % (pswd, host, db)
 
 print environ['DATABASE_URL']
 
