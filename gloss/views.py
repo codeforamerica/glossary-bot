@@ -251,10 +251,18 @@ def index():
     full_text = sub(u' +', u' ', full_text)
     command_text = full_text
 
+    #
+    # GET definition (for a single word that can't be interpreted as a command)
+    #
+
     # if the text is a single word that's not a single-word command, treat it as a get
     if command_text.count(u' ') is 0 and len(command_text) > 0 and \
        command_text.lower() not in STATS_CMDS + RECENT_CMDS + HELP_CMDS + SET_CMDS:
         return query_definition_and_get_response(command_text, user_name, channel_id, False)
+
+    #
+    # SET definition
+    #
 
     # if the text contains an '=', treat it as a 'set' command
     if '=' in command_text:
@@ -337,7 +345,7 @@ def index():
             return learnings_plain_text, 200
 
     #
-    # GET definition
+    # GET definition (for any text that wasn't caught before this)
     #
 
     # check the definition
