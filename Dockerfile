@@ -8,9 +8,9 @@
 # 
 # Create the db and tables, you can connect an instance with psql.
 #
-# psql -H `sudo docker inspect db | grep IPAddress  | awk -F\" '{print $4}'` -U postgres
+# createdb -h `sudo docker inspect db | grep IPAddress  | awk -F\" '{print $4}'` -U postgres gloss
 #
-# or run the manager
+# and run the manager
 #
 # export DATABASE_URL=postgresql://postgres@$(sudo docker inspect db | grep IPAddress  | awk -F\" '{print $4}')/gloss
 # python manager.py db createdb
