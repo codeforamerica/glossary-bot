@@ -243,7 +243,7 @@ class BotTestCase(unittest.TestCase):
         # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
-        self.assertEqual(interaction_check.user, u'glossie')
+        self.assertEqual(interaction_check.user_name, u'glossie')
         self.assertEqual(interaction_check.term, u'EW')
         self.assertEqual(interaction_check.action, u'found')
 
@@ -286,7 +286,7 @@ class BotTestCase(unittest.TestCase):
         # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
-        self.assertEqual(interaction_check.user, u'glossie')
+        self.assertEqual(interaction_check.user_name, u'glossie')
         self.assertEqual(interaction_check.term, u'EW')
         self.assertEqual(interaction_check.action, u'found')
 
@@ -300,7 +300,7 @@ class BotTestCase(unittest.TestCase):
         # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
-        self.assertEqual(interaction_check.user, u'glossie')
+        self.assertEqual(interaction_check.user_name, u'glossie')
         self.assertEqual(interaction_check.term, u'EW')
         self.assertEqual(interaction_check.action, u'not_found')
 
@@ -540,7 +540,7 @@ class BotTestCase(unittest.TestCase):
         # at least one request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
         self.assertIsNotNone(interaction_check)
-        self.assertEqual(interaction_check.user, u'glossie')
+        self.assertEqual(interaction_check.user_name, u'glossie')
         self.assertEqual(interaction_check.term, u'EW')
         self.assertEqual(interaction_check.action, u'found')
 

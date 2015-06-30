@@ -102,7 +102,7 @@ def get_stats():
     ''' Gather and return some statistics
     '''
     entries = db.session.query(func.count(Definition.term)).scalar()
-    definers = db.session.query(func.count(distinct(Definition.user))).scalar()
+    definers = db.session.query(func.count(distinct(Definition.user_name))).scalar()
     queries = db.session.query(func.count(Interaction.action)).scalar()
     outputs = (
         (u'definitions for', entries, u'term', u'terms'),
@@ -138,11 +138,11 @@ def get_learnings(how_many=12, sort_order=u'recent'):
     rich_text = u'{}: {}'.format(wording, ', '.join([u'*{}*'.format(item.term) for item in definitions]))
     return plain_text, rich_text
 
-def log_query(term, user, action):
+def log_query(term, user_name, action):
     ''' Log a query into the interactions table
     '''
     try:
-        db.session.add(Interaction(term=term, user=user, action=action))
+        db.session.add(Interaction(term=term, user_name=user_name, action=action))
         db.session.commit()
     except:
         pass
@@ -167,12 +167,12 @@ def query_definition_and_get_response(command_text, user_name, channel_id, priva
     entry = query_definition(command_text)
     if not entry:
         # remember this query
-        log_query(term=command_text, user=user_name, action=u'not_found')
+        log_query(term=command_text, user_name=user_name, action=u'not_found')
 
         return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=command_text), 200
 
     # remember this query
-    log_query(term=command_text, user=user_name, action=u'found')
+    log_query(term=command_text, user_name=user_name, action=u'found')
 
     fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
     if not private_response:
@@ -209,7 +209,7 @@ def set_definition_and_get_response(command_params, user_name):
             last_value = entry.definition
             entry.term = set_term
             entry.definition = set_value
-            entry.user = user_name
+            entry.user_name = user_name
             entry.creation_date = datetime.utcnow()
             try:
                 db.session.add(entry)
@@ -223,7 +223,7 @@ def set_definition_and_get_response(command_params, user_name):
             return u'*Gloss Bot* already knows that the definition for *{}* is *{}*'.format(set_term, set_value), 200
 
     # save the definition in the database
-    entry = Definition(term=set_term, definition=set_value, user=user_name)
+    entry = Definition(term=set_term, definition=set_value, user_name=user_name)
     try:
         db.session.add(entry)
         db.session.commit()
