@@ -116,7 +116,7 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
-def get_learnings(how_many=12, sort_order=u'recent'):
+def get_learnings(how_many=12, sort_order=u'recent', offset=0):
     ''' Gather and return some recent definitions
     '''
     order_func = Definition.creation_date.desc()
@@ -127,7 +127,11 @@ def get_learnings(how_many=12, sort_order=u'recent'):
         prefix_singluar = u'I know the definition for'
         prefix_plural = u'I know definitions for'
 
-    definitions = db.session.query(Definition).order_by(order_func).limit(how_many).all()
+    # if how_many is 0, ignore offset and return all results
+    if how_many == 0:
+        definitions = db.session.query(Definition).order_by(order_func).all()
+    else:
+        definitions = db.session.query(Definition).order_by(order_func).limit(how_many).offset(offset).all()
 
     if not definitions:
         no_definitions_text = u'I haven\'t learned any definitions yet.'
@@ -329,14 +333,30 @@ def index():
     #
 
     if command_action in RECENT_CMDS:
-        sort_order = u''
-        if command_params == u'random':
-            sort_order = command_params
-        learnings_plain_text, learnings_rich_text = get_learnings(sort_order=sort_order)
+        recent_args = {}
+        # extract parameters
+        params_list = command_params.split(' ')
+        for param in params_list:
+            if param == u'random':
+                recent_args['sort_order'] = param
+                continue
+            if param == u'all':
+                recent_args['how_many'] = 0
+                continue
+            try:
+                passed_int = int(param)
+                if 'how_many' not in recent_args:
+                    recent_args['how_many'] = passed_int
+                elif 'offset' not in recent_args:
+                    recent_args['offset'] = passed_int
+            except ValueError:
+                continue
+
+        learnings_plain_text, learnings_rich_text = get_learnings(**recent_args)
         if not private_response:
             # send the message
-            fallback = u'{} /gloss learnings {}: {}'.format(user_name, sort_order, learnings_plain_text)
-            pretext = u'*{}* /gloss learnings {}'.format(user_name, sort_order)
+            fallback = u'{} /gloss learnings {}: {}'.format(user_name, command_params, learnings_plain_text)
+            pretext = u'*{}* /gloss learnings {}'.format(user_name, command_params)
             title = u''
             send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title, mrkdwn_in=["text"])
             return u'', 200

@@ -397,12 +397,18 @@ class BotTestCase(unittest.TestCase):
         ''' Learnings are properly returned by the bot
         '''
         # set some values in the database
-        self.post_command(u'EW = Eligibility Worker')
-        self.post_command(u'FW = Fligibility Worker')
-        self.post_command(u'GW = Gligibility Worker')
-        self.post_command(u'HW = Hligibility Worker')
-        self.post_command(u'IW = Iligibility Worker')
+        self.post_command(u'KW = Kligibility Worker')
+        self.post_command(u'LW = Lligibility Worker')
+        self.post_command(u'MW = Mligibility Worker')
+        self.post_command(u'NW = Nligibility Worker')
         self.post_command(u'ÓW = Óligibility Worker')
+        self.post_command(u'PW = Pligibility Worker')
+        self.post_command(u'QW = Qligibility Worker')
+        self.post_command(u'RW = Rligibility Worker')
+        self.post_command(u'SW = Sligibility Worker')
+        self.post_command(u'TW = Tligibility Worker')
+        self.post_command(u'UW = Uligibility Worker')
+        self.post_command(u'VW = Vligibility Worker')
 
         # capture the bot's POST to the incoming webhook and test its content
         def response_content(url, request):
@@ -418,13 +424,20 @@ class BotTestCase(unittest.TestCase):
                 attachment = payload['attachments'][0]
                 self.assertIsNotNone(attachment)
                 self.assertIsNotNone(attachment['title'])
+
                 self.assertTrue(u'I recently learned definitions for' in attachment['text'])
-                self.assertTrue(u'EW' in attachment['text'])
-                self.assertTrue(u'FW' in attachment['text'])
-                self.assertTrue(u'GW' in attachment['text'])
-                self.assertTrue(u'HW' in attachment['text'])
-                self.assertTrue(u'IW' in attachment['text'])
+                self.assertTrue(u'KW' in attachment['text'])
+                self.assertTrue(u'LW' in attachment['text'])
+                self.assertTrue(u'MW' in attachment['text'])
+                self.assertTrue(u'NW' in attachment['text'])
                 self.assertTrue(u'ÓW' in attachment['text'])
+                self.assertTrue(u'PW' in attachment['text'])
+                self.assertTrue(u'QW' in attachment['text'])
+                self.assertTrue(u'RW' in attachment['text'])
+                self.assertTrue(u'SW' in attachment['text'])
+                self.assertTrue(u'TW' in attachment['text'])
+                self.assertTrue(u'UW' in attachment['text'])
+                self.assertTrue(u'VW' in attachment['text'])
                 self.assertIsNotNone(attachment['color'])
                 self.assertIsNotNone(attachment['fallback'])
                 return response(200)
@@ -474,6 +487,54 @@ class BotTestCase(unittest.TestCase):
 
         # if they're all equal, we've failed
         self.assertFalse(control == random1 and control == random2 and control == random3)
+
+    def test_all_learnings(self):
+        ''' All learnings are returned when requested
+        '''
+        # set some values in the database
+        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'W', u'X']
+        check = []
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
+            check.insert(0, u'{}W'.format(letter))
+
+        # get all learnings
+        robo_response = self.post_command(u'shh learnings all')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
+
+    def test_some_learnings(self):
+        ''' Only a few learnings are returned when requested
+        '''
+        # set some values in the database
+        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'W', u'X']
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
+
+        limit = 7
+        check = [u'{}W'.format(item) for item in list(reversed(letters[-limit:]))]
+
+        # get some learnings
+        robo_response = self.post_command(u'shh learnings {}'.format(limit))
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
+
+    def test_offset_learnings(self):
+        ''' An offset of learnings are returned when requested
+        '''
+        # set some values in the database
+        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'W', u'X']
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
+
+        limit = 7
+        offset = 11
+        check = [u'{}W'.format(item) for item in list(reversed(letters[-(limit + offset):-offset]))]
+
+        # get some learnings
+        robo_response = self.post_command(u'shh learnings {} {}'.format(limit, offset))
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
 
     def test_learnings_language(self):
         ''' Language describing learnings is numerically accurate
