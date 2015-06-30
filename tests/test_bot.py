@@ -397,18 +397,9 @@ class BotTestCase(unittest.TestCase):
         ''' Learnings are properly returned by the bot
         '''
         # set some values in the database
-        self.post_command(u'KW = Kligibility Worker')
-        self.post_command(u'LW = Lligibility Worker')
-        self.post_command(u'MW = Mligibility Worker')
-        self.post_command(u'NW = Nligibility Worker')
-        self.post_command(u'ÓW = Óligibility Worker')
-        self.post_command(u'PW = Pligibility Worker')
-        self.post_command(u'QW = Qligibility Worker')
-        self.post_command(u'RW = Rligibility Worker')
-        self.post_command(u'SW = Sligibility Worker')
-        self.post_command(u'TW = Tligibility Worker')
-        self.post_command(u'UW = Uligibility Worker')
-        self.post_command(u'VW = Vligibility Worker')
+        letters = [u'K', u'L', u'M', u'N', u'Ó', u'P', u'Q', u'R', u'S', u'T', u'U', u'V']
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
 
         # capture the bot's POST to the incoming webhook and test its content
         def response_content(url, request):
@@ -451,21 +442,9 @@ class BotTestCase(unittest.TestCase):
         ''' Learnings are returned in random order when requested
         '''
         # set some values in the database
-        self.post_command(u'EW = Eligibility Worker')
-        self.post_command(u'FW = Fligibility Worker')
-        self.post_command(u'GW = Gligibility Worker')
-        self.post_command(u'HW = Hligibility Worker')
-        self.post_command(u'IW = Iligibility Worker')
-        self.post_command(u'JW = Jligibility Worker')
-        self.post_command(u'KW = Kligibility Worker')
-        self.post_command(u'LW = Lligibility Worker')
-        self.post_command(u'MW = Mligibility Worker')
-        self.post_command(u'NW = Nligibility Worker')
-        self.post_command(u'OW = Oligibility Worker')
-        self.post_command(u'PW = Pligibility Worker')
-        self.post_command(u'QW = Qligibility Worker')
-        self.post_command(u'RW = Rligibility Worker')
-        self.post_command(u'SW = Sligibility Worker')
+        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S']
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
 
         # get chronological learnings
         robo_response = self.post_command(u'shh learnings')
