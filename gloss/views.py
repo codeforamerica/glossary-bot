@@ -142,6 +142,30 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0):
     rich_text = u'{}: {}'.format(wording, ', '.join([u'*{}*'.format(item.term) for item in definitions]))
     return plain_text, rich_text
 
+def parse_learnings_params(command_params):
+    ''' Parse the passed learnings command params
+    '''
+    recent_args = {}
+    # extract parameters
+    params_list = command_params.split(' ')
+    for param in params_list:
+        if param == u'random':
+            recent_args['sort_order'] = param
+            continue
+        if param == u'all':
+            recent_args['how_many'] = 0
+            continue
+        try:
+            passed_int = int(param)
+            if 'how_many' not in recent_args:
+                recent_args['how_many'] = passed_int
+            elif 'offset' not in recent_args:
+                recent_args['offset'] = passed_int
+        except ValueError:
+            continue
+
+    return recent_args
+
 def log_query(term, user_name, action):
     ''' Log a query into the interactions table
     '''
@@ -333,25 +357,8 @@ def index():
     #
 
     if command_action in RECENT_CMDS:
-        recent_args = {}
         # extract parameters
-        params_list = command_params.split(' ')
-        for param in params_list:
-            if param == u'random':
-                recent_args['sort_order'] = param
-                continue
-            if param == u'all':
-                recent_args['how_many'] = 0
-                continue
-            try:
-                passed_int = int(param)
-                if 'how_many' not in recent_args:
-                    recent_args['how_many'] = passed_int
-                elif 'offset' not in recent_args:
-                    recent_args['offset'] = passed_int
-            except ValueError:
-                continue
-
+        recent_args = parse_learnings_params(command_params)
         learnings_plain_text, learnings_rich_text = get_learnings(**recent_args)
         if not private_response:
             # send the message
