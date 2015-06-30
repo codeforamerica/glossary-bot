@@ -115,5 +115,54 @@ Now run a git push to deploy the application:
 ```
 git push heroku master
 ```
-
 And you're good to get glossing!
+
+#### Upgrade on Heroku
+
+You've got an older version of Gloss Bot on Heroku and want to upgrade to the latest version. First, guarantee that you've got a backup of your database by following the instructions in [Heroku's PGBackups documentation](https://devcenter.heroku.com/articles/heroku-postgres-backups).
+
+Now, do a `git pull` in your local glossbot directory:
+
+```
+git pull
+```
+
+And deploy it to Heroku:
+
+```
+git push heroku master
+```
+
+You may need to run database migrations to get your database current with the new version:
+
+```
+heroku run python manage.py db upgrade
+```
+
+If you get errors when you try that, you may need to stamp your database with a revision id that matches its current state. You can check whether that's the problem by connecting to your remote database:
+
+```
+heroku pg:psql
+```
+
+And in `psql`, checking for the `alembic_version` table:
+
+```
+SELECT * FROM alembic_version;
+```
+
+If that gives you an error like `ERROR:  relation "alembic_version" does not exist` then you need to create that table. First type `\q` to leave `psql`, then run this heroku command:
+
+```
+heroku run python manage.py db stamp 578b43a08697
+```
+
+That will create the `alembic_version` table and give it a value for `version_num` of `578b43a08697`, which matches [the inital database migration](https://github.com/codeforamerica/glossary-bot/blob/master/migrations/versions/578b43a08697_initial_migration.py) for the application.
+
+Now that you've done that, you should be able to run
+
+```
+heroku run python manage.py db upgrade
+```
+
+without errors.
