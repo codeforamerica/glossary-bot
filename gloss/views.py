@@ -137,14 +137,14 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
         prefix_singluar = u'Today I learned the definition for'
         prefix_plural = u'Today I learned definitions for'
         no_definitions_text = u'I haven\'t learned any definitions today.'
-        definitions = db.session.query(Definition).order_by(order_descending).filter(cast(Definition.creation_date, DATE) == date.today()).all()
+        definitions = db.session.query(Definition).order_by(order_function).filter(cast(Definition.creation_date, DATE) == date.today()).all()
 
     elif when == u'yesterday':
         prefix_singluar = u'Yesterday I learned the definition for'
         prefix_plural = u'Yesterday I learned definitions for'
         no_definitions_text = u'I didn\'t learn any definitions yesterday.'
         date_yesterday = date.today() - timedelta(days=1)
-        definitions = db.session.query(Definition).order_by(order_descending).filter(cast(Definition.creation_date, DATE) == date_yesterday).all()
+        definitions = db.session.query(Definition).order_by(order_function).filter(cast(Definition.creation_date, DATE) == date_yesterday).all()
 
     # if how_many is 0, ignore offset and return all results
     elif how_many == 0:
