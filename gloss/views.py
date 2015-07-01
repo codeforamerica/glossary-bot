@@ -2,10 +2,10 @@ from flask import abort, current_app, request
 from . import gloss as app
 from . import db
 from models import Definition, Interaction
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, cast, DATE
 from re import compile, match, search, sub, UNICODE
 from requests import post
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import random
 
@@ -117,7 +117,7 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
-def get_learnings(how_many=12, sort_order=u'recent', offset=0):
+def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
     ''' Gather and return some recent definitions
     '''
     order_descending = Definition.creation_date.desc()
@@ -125,13 +125,29 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0):
     order_function = order_descending
     prefix_singluar = u'I recently learned the definition for'
     prefix_plural = u'I recently learned definitions for'
+    no_definitions_text = u'I haven\'t learned any definitions yet.'
     if sort_order == u'random':
         order_function = order_random
+
+    if sort_order == u'random' or offset > 0:
         prefix_singluar = u'I know the definition for'
         prefix_plural = u'I know definitions for'
 
+    if when == u'today':
+        prefix_singluar = u'Today I learned the definition for'
+        prefix_plural = u'Today I learned definitions for'
+        no_definitions_text = u'I haven\'t learned any definitions today.'
+        definitions = db.session.query(Definition).order_by(order_descending).filter(cast(Definition.creation_date, DATE) == date.today()).all()
+
+    elif when == u'yesterday':
+        prefix_singluar = u'Yesterday I learned the definition for'
+        prefix_plural = u'Yesterday I learned definitions for'
+        no_definitions_text = u'I didn\'t learn any definitions yesterday.'
+        date_yesterday = date.today() - timedelta(days=1)
+        definitions = db.session.query(Definition).order_by(order_descending).filter(cast(Definition.creation_date, DATE) == date_yesterday).all()
+
     # if how_many is 0, ignore offset and return all results
-    if how_many == 0:
+    elif how_many == 0:
         definitions = db.session.query(Definition).order_by(order_function).all()
     # if order is random and there is an offset, randomize the results after the query
     elif sort_order == u'random' and offset > 0:
@@ -141,7 +157,6 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0):
         definitions = db.session.query(Definition).order_by(order_function).limit(how_many).offset(offset).all()
 
     if not definitions:
-        no_definitions_text = u'I haven\'t learned any definitions yet.'
         return no_definitions_text, no_definitions_text
 
     wording = prefix_plural if len(definitions) > 1 else prefix_singluar
@@ -162,6 +177,8 @@ def parse_learnings_params(command_params):
         if param == u'all':
             recent_args['how_many'] = 0
             continue
+        if param in (u'today', u'yesterday'):
+            recent_args['when'] = param
         try:
             passed_int = int(param)
             if 'how_many' not in recent_args:

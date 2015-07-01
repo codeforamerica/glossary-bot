@@ -6,6 +6,8 @@ from os import environ
 from flask import current_app
 from gloss import create_app, db
 from gloss.models import Definition, Interaction
+from gloss.views import query_definition
+from datetime import datetime, date, timedelta
 import json
 
 class BotTestCase(unittest.TestCase):
@@ -520,6 +522,19 @@ class BotTestCase(unittest.TestCase):
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue(u', '.join(check) in robo_response.data)
 
+        # if 'all' is part of the command, other limiting params are ignored
+        robo_response = self.post_command(u'shh learnings all 5')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
+
+        robo_response = self.post_command(u'shh learnings 5 3 all')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
+
+        robo_response = self.post_command(u'shh learnings all 3 5')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
+
     def test_some_learnings(self):
         ''' Only a few learnings are returned when requested
         '''
@@ -552,6 +567,37 @@ class BotTestCase(unittest.TestCase):
         robo_response = self.post_command(u'shh learnings {} {}'.format(limit, offset))
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue(u', '.join(check) in robo_response.data)
+
+    def test_today_and_yesterday_learnings(self):
+        ''' Today's learnings are returned when requested
+        '''
+        # set some values in the database
+        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'W', u'X']
+        check = []
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
+            check.insert(0, u'{}W'.format(letter))
+
+        # change the date on some of the values
+        change_count = 11
+        time_travelers = check[:change_count]
+        check = check[change_count:]
+        date_yesterday = datetime.utcnow() - timedelta(days=1)
+        for term in time_travelers:
+            entry = query_definition(term)
+            entry.creation_date = date_yesterday
+            db.session.add(entry)
+            db.session.commit()
+
+        # get today's learnings
+        robo_response = self.post_command(u'shh learnings today')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(check) in robo_response.data)
+
+        # get yesterday's
+        robo_response = self.post_command(u'shh learnings yesterday')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(time_travelers) in robo_response.data)
 
     def test_learnings_language(self):
         ''' Language describing learnings is numerically accurate
