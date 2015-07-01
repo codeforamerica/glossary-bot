@@ -122,14 +122,17 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
     '''
     order_descending = Definition.creation_date.desc()
     order_random = func.random()
+    order_alphabetical = Definition.term
     order_function = order_descending
     prefix_singluar = u'I recently learned the definition for'
     prefix_plural = u'I recently learned definitions for'
     no_definitions_text = u'I haven\'t learned any definitions yet.'
     if sort_order == u'random':
         order_function = order_random
+    elif sort_order == u'alpha':
+        order_function = order_alphabetical
 
-    if sort_order == u'random' or offset > 0:
+    if sort_order == u'random' or sort_order == u'alpha' or offset > 0:
         prefix_singluar = u'I know the definition for'
         prefix_plural = u'I know definitions for'
 
@@ -174,11 +177,15 @@ def parse_learnings_params(command_params):
         if param == u'random':
             recent_args['sort_order'] = param
             continue
+        if param == u'alpha' or param == u'alphabetical':
+            recent_args['sort_order'] = u'alpha'
+            continue
         if param == u'all':
             recent_args['how_many'] = 0
             continue
         if param in (u'today', u'yesterday'):
             recent_args['when'] = param
+            continue
         try:
             passed_int = int(param)
             if 'how_many' not in recent_args:

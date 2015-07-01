@@ -469,6 +469,31 @@ class BotTestCase(unittest.TestCase):
         # if they're all equal, we've failed
         self.assertFalse(control == random1 and control == random2 and control == random3)
 
+    def test_alphabetical_learnings(self):
+        ''' Learnings are returned in random order when requested
+        '''
+        # set some values in the database
+        letters = [u'E', u'G', u'I', u'K', u'M', u'O', u'Q', u'S', u'R', u'P', u'N', u'L', u'J', u'H', u'F']
+        check = []
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
+            check.insert(0, u'{}W'.format(letter))
+
+        desc_check = check[:12]
+        alpha_check = list(check)
+        alpha_check.sort()
+        alpha_check = alpha_check[:12]
+
+        # get chronological learnings
+        robo_response = self.post_command(u'shh learnings')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(desc_check) in robo_response.data)
+
+        # get alphabetical learnings
+        robo_response = self.post_command(u'shh learnings alpha')
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue(u', '.join(alpha_check) in robo_response.data)
+
     def test_random_offset_learnings(self):
         ''' An offset group of learnings are returned randomized
         '''
