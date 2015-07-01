@@ -467,6 +467,44 @@ class BotTestCase(unittest.TestCase):
         # if they're all equal, we've failed
         self.assertFalse(control == random1 and control == random2 and control == random3)
 
+    def test_random_offset_learnings(self):
+        ''' An offset group of learnings are returned randomized
+        '''
+        # set some values in the database
+        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S']
+        for letter in letters:
+            self.post_command(u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
+
+        # get chronological learnings
+        robo_response = self.post_command(u'shh learnings 7 4')
+        self.assertEqual(robo_response.status_code, 200)
+        control = robo_response.data
+
+        # get a list of the terms from the control string
+        check_terms = control.split(', ')
+        check_terms[0] = check_terms[0][-2:]
+
+        # get a few random learnings
+        robo_response = self.post_command(u'shh learnings random 7 4')
+        self.assertEqual(robo_response.status_code, 200)
+        random1 = robo_response.data
+
+        robo_response = self.post_command(u'shh learnings random 7 4')
+        self.assertEqual(robo_response.status_code, 200)
+        random2 = robo_response.data
+
+        robo_response = self.post_command(u'shh learnings random 7 4')
+        self.assertEqual(robo_response.status_code, 200)
+        random3 = robo_response.data
+
+        # if they're all equal, we've failed
+        self.assertFalse(control == random1 and control == random2 and control == random3)
+        # but they should all have the same elements
+        for term in check_terms:
+            self.assertTrue(term in random1)
+            self.assertTrue(term in random2)
+            self.assertTrue(term in random3)
+
     def test_all_learnings(self):
         ''' All learnings are returned when requested
         '''

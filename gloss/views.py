@@ -7,6 +7,7 @@ from re import compile, match, search, sub, UNICODE
 from requests import post
 from datetime import datetime
 import json
+import random
 
 STATS_CMDS = (u'stats',)
 RECENT_CMDS = (u'learnings',)
@@ -119,19 +120,25 @@ def get_stats():
 def get_learnings(how_many=12, sort_order=u'recent', offset=0):
     ''' Gather and return some recent definitions
     '''
-    order_func = Definition.creation_date.desc()
+    order_descending = Definition.creation_date.desc()
+    order_random = func.random()
+    order_function = order_descending
     prefix_singluar = u'I recently learned the definition for'
     prefix_plural = u'I recently learned definitions for'
     if sort_order == u'random':
-        order_func = func.random()
+        order_function = order_random
         prefix_singluar = u'I know the definition for'
         prefix_plural = u'I know definitions for'
 
     # if how_many is 0, ignore offset and return all results
     if how_many == 0:
-        definitions = db.session.query(Definition).order_by(order_func).all()
+        definitions = db.session.query(Definition).order_by(order_function).all()
+    # if order is random and there is an offset, randomize the results after the query
+    elif sort_order == u'random' and offset > 0:
+        definitions = db.session.query(Definition).order_by(order_descending).limit(how_many).offset(offset).all()
+        random.shuffle(definitions)
     else:
-        definitions = db.session.query(Definition).order_by(order_func).limit(how_many).offset(offset).all()
+        definitions = db.session.query(Definition).order_by(order_function).limit(how_many).offset(offset).all()
 
     if not definitions:
         no_definitions_text = u'I haven\'t learned any definitions yet.'
