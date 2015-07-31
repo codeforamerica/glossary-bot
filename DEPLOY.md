@@ -25,7 +25,7 @@ git clone git@github.com:codeforamerica/glossary-bot.git
 cd glossary-bot
 ```
 
-Now, create a new Heroku application. You can give it a name: `heroku create my-glossary-bot`, or let Heroku generate one: `heroku create`. You won't see this name in Slack, it'll just be part of the URL that Slack will use communicate with the bot behind the scenes.
+Now, create a new Heroku application. You can give it a name: `heroku create my-glossary-bot`, or let Heroku generate one: `heroku create`. You won't see this name in Slack, it'll just be part of the URL that Slack uses to communicate with the bot behind the scenes.
 
 ```
 heroku create
