@@ -21,7 +21,7 @@ Glossary Bot uses two Slack integrations: [Slash Commands](https://api.slack.com
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
-Click the button above to get started. In the form that loads, add a name for your bot in the **App Name** field, or leave it blank to have Heroku generate a unique name.
+Click the button above to get started. In the form that loads, add a name for your bot in the **App Name** field, or leave it blank to have Heroku generate a unique name. You won't see this name in Slack, it'll just be part of the URL that Slack will communicate with behind the scenes.
 
 Paste the **Token** from the Slash Command integration into the `SLACK_TOKEN` field and the **Webhook URL** from the Incoming Webhooks integration into the `SLACK_WEBHOOK_URL` field. Now push the **Deploy for Free** button to deploy the bot!
 
