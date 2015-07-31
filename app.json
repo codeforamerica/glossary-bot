@@ -9,12 +9,10 @@
   ],
   "env": {
     "SLACK_TOKEN": {
-      "description": "The Token from your Slash Command integration.",
-      "value": "CHANGE_ME"
+      "description": "The Token from your Slash Command integration."
     },
     "SLACK_WEBHOOK_URL": {
-      "description": "The Webhook URL from your Incoming Webhooks integration.",
-      "value": "CHANGE_ME"
+      "description": "The Webhook URL from your Incoming Webhooks integration."
     }
   },
   "addons": [
