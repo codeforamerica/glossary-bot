@@ -7,7 +7,7 @@ Glossary Bot maintains a glossary of terms created by its users, and responds to
 
 #### Install
 
-Glossary Bot is a [Flask](http://flask.pocoo.org/) app built to run on [Heroku](https://heroku.com/). To deploy the bot using Heroku's automated setup, see below. To deploy the bot from the command line, read [DEPLOY](DEPLOY.md). To install the bot locally for development and testing, read [INSTALL](INSTALL.md).
+Glossary Bot is a [Flask](http://flask.pocoo.org/) app built to run on [Heroku](https://heroku.com/). To deploy the bot using Heroku's automated setup, see below. To deploy or upgrade the bot from the command line, read [DEPLOY](DEPLOY.md). To install the bot locally for development and testing, read [INSTALL](INSTALL.md).
 
 #### Set Up on Slack
 
@@ -21,10 +21,10 @@ Glossary Bot uses two Slack integrations: [Slash Commands](https://api.slack.com
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
-Push the button above to get started. In the form that loads, add a name for your bot in the **App Name** field, or leave it blank to have Heroku generate a unique name.
+Click the button above to get started. In the form that loads, add a name for your bot in the **App Name** field, or leave it blank to have Heroku generate a unique name.
 
 Paste the **Token** from the Slash Command integration into the `SLACK_TOKEN` field and the **Webhook URL** from the Incoming Webhooks integration into the `SLACK_WEBHOOK_URL` field. Now push the **Deploy for Free** button to deploy the bot!
 
-When it's done deploying, click the **View** button at the bottom of the form. You'll see a **Method Not Allowed** error page, but don't worry about that. All you're looking for is your bot's URL, which looks something like `https://my-glossary-bot.herokuapp.com/`. Copy that URL, paste it into the **URL** field of the Slash Command integration page on Slack, and save the integration.
+When it's done deploying, click the **View** button at the bottom of the form. A **Method Not Allowed** error page will load, but don't worry about that. All you're looking for is your bot's URL, which looks something like `https://my-glossary-bot.herokuapp.com/`. Copy that URL, paste it into the **URL** field of the Slash Command integration page on Slack, and save the integration there.
 
 And now you're good to get glossing!
