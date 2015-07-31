@@ -27,4 +27,4 @@ Paste the **Token** from the Slash Command integration into the `SLACK_TOKEN` fi
 
 When it's done deploying, click the **View** button at the bottom of the form. A **Method Not Allowed** error page will load, but don't worry about that. All you're looking for is your bot's URL, which looks something like `https://my-glossary-bot.herokuapp.com/`. Copy that URL, paste it into the **URL** field of the Slash Command integration page on Slack, and save the integration there.
 
-And now you're good to get glossing!
+And now you're good to get glossing! Open up Slack and type `/gloss help` to start.
