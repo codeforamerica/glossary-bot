@@ -5,7 +5,7 @@ Glossary Bot maintains a glossary of terms created by its users, and responds to
 
 ![DemoGif](static/gloss-bot-demo.gif)
 
-#### Install
+#### Deploy Glossary Bot
 
 Glossary Bot is a [Flask](http://flask.pocoo.org/) app built to run on [Heroku](https://heroku.com/). To deploy the bot using Heroku's automated setup, see below. To deploy or upgrade the bot from the command line, read [DEPLOY](DEPLOY.md). To install the bot locally for development and testing, read [INSTALL](INSTALL.md).
 
