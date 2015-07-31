@@ -50,6 +50,13 @@ Now run a git push to deploy the application:
 ```
 git push heroku master
 ```
+
+When that's finished, initialize the database:
+
+```
+heroku run python manage.py db upgrade
+```
+
 And you're good to get glossing!
 
 #### Upgrade on Heroku
