@@ -1,0 +1,24 @@
+{
+  "name": "Glossary Bot",
+  "description": "A Slack bot that maintains a glossary of terms created by its users.",
+  "repository": "https://github.com/codeforamerica/glossary-bot",
+  "keywords": [
+    "slack",
+    "glossary",
+    "bot"
+  ],
+  "scripts": {
+    "postdeploy": "python manage.py db upgrade"
+  },
+  "env": {
+    "SLACK_TOKEN": {
+      "description": "The Token from your Slash Command integration."
+    },
+    "SLACK_WEBHOOK_URL": {
+      "description": "The Webhook URL from your Incoming Webhooks integration."
+    }
+  },
+  "addons": [
+    "heroku-postgresql"
+  ]
+}
