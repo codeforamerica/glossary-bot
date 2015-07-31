@@ -7,6 +7,9 @@
     "glossary",
     "bot"
   ],
+  "scripts": {
+    "postdeploy": "python manage.py createdb"
+  },
   "env": {
     "SLACK_TOKEN": {
       "description": "The Token from your Slash Command integration."
