@@ -8,7 +8,7 @@
     "bot"
   ],
   "scripts": {
-    "postdeploy": "python manage.py createdb"
+    "postdeploy": "python manage.py db upgrade"
   },
   "env": {
     "SLACK_TOKEN": {
