@@ -2,6 +2,10 @@
 
 Follow these instructions to deploy or upgrade Glossary Bot to Heroku from the command line. You can also deploy Glossary Bot the easy way using the *Deploy to Heroku* button as described in [README](README.md)
 
+#### Requirements
+
+Glossary Bot is written in Python 2.7.
+
 #### Install
 
 Glossary Bot is a [Flask](http://flask.pocoo.org/) app built to run on [Heroku](https://heroku.com/).

@@ -52,7 +52,7 @@ and make sure that the value of `DATABASE_URL` in `.env` matches the name of the
 Initialize the database:
 
 ```
-python manage.py createdb
+python manage.py db upgrade
 ```
 
 And run the application:
