@@ -395,6 +395,33 @@ class BotTestCase(unittest.TestCase):
             fake_response = self.post_command(u'stats')
             self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
 
+    def test_get_stats_on_empty_database(self):
+        ''' A coherent message is returned when requesting stats on an empty database
+        '''
+        # capture the bot's POST to the incoming webhook and test its content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                self.assertIsNotNone(payload['username'])
+                self.assertIsNotNone(payload['text'])
+                self.assertTrue(u'glossie' in payload['text'])
+                self.assertTrue(u'gloss stats' in payload['text'])
+                self.assertEqual(payload['channel'], u'123456')
+                self.assertIsNotNone(payload['icon_emoji'])
+
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertIsNotNone(attachment['title'])
+                self.assertTrue(u'I have no definitions.' in attachment['text'])
+                self.assertIsNotNone(attachment['color'])
+                self.assertIsNotNone(attachment['fallback'])
+                return response(200)
+
+        # send a POST to the bot to request stats
+        with HTTMock(response_content):
+            fake_response = self.post_command(u'stats')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+
     def test_get_learnings(self):
         ''' Learnings are properly returned by the bot
         '''
