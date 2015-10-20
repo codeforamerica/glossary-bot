@@ -7,7 +7,7 @@ from flask import current_app
 from gloss import create_app, db
 from gloss.models import Definition, Interaction
 from gloss.views import query_definition
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 import json
 
 class BotTestCase(unittest.TestCase):
@@ -386,6 +386,35 @@ class BotTestCase(unittest.TestCase):
                 self.assertTrue(u'I have definitions for 1 term' in attachment['text'])
                 self.assertTrue(u'1 person has defined terms' in attachment['text'])
                 self.assertTrue(u'I\'ve been asked for definitions 1 time' in attachment['text'])
+                self.assertIsNotNone(attachment['color'])
+                self.assertIsNotNone(attachment['fallback'])
+                return response(200)
+
+        # send a POST to the bot to request stats
+        with HTTMock(response_content):
+            fake_response = self.post_command(u'stats')
+            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+
+    def test_get_stats_on_empty_database(self):
+        ''' A coherent message is returned when requesting stats on an empty database
+        '''
+        # capture the bot's POST to the incoming webhook and test its content
+        def response_content(url, request):
+            if 'hooks.example.com' in url.geturl():
+                payload = json.loads(request.body)
+                self.assertIsNotNone(payload['username'])
+                self.assertIsNotNone(payload['text'])
+                self.assertTrue(u'glossie' in payload['text'])
+                self.assertTrue(u'gloss stats' in payload['text'])
+                self.assertEqual(payload['channel'], u'123456')
+                self.assertIsNotNone(payload['icon_emoji'])
+
+                attachment = payload['attachments'][0]
+                self.assertIsNotNone(attachment)
+                self.assertIsNotNone(attachment['title'])
+                self.assertTrue(u'I don\'t have any definitions' in attachment['text'])
+                self.assertTrue(u'Nobody has defined terms' in attachment['text'])
+                self.assertTrue(u'Nobody has asked me for definitions' in attachment['text'])
                 self.assertIsNotNone(attachment['color'])
                 self.assertIsNotNone(attachment['fallback'])
                 return response(200)

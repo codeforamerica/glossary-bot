@@ -106,14 +106,16 @@ def get_stats():
     definers = db.session.query(func.count(distinct(Definition.user_name))).scalar()
     queries = db.session.query(func.count(Interaction.action)).scalar()
     outputs = (
-        (u'definitions for', entries, u'term', u'terms'),
-        (u'', definers, u'person has defined terms', u'people have defined terms'),
-        (u'I\'ve been asked for definitions', queries, u'time', u'times')
+        (u'I have definitions for', entries, u'term', u'terms', u'I don\'t have any definitions'),
+        (u'', definers, u'person has defined terms', u'people have defined terms', u'Nobody has defined terms'),
+        (u'I\'ve been asked for definitions', queries, u'time', u'times', u'Nobody has asked me for definitions')
     )
     lines = []
-    for prefix, period, singular, plural in outputs:
+    for prefix, period, singular, plural, empty_line in outputs:
         if period:
             lines.append(u'{}{} {}'.format(u'{} '.format(prefix) if prefix else u'', period, singular if period == 1 else plural))
+        else:
+            lines.append(empty_line)
     # return the message
     return u'\n'.join(lines)
 
@@ -370,7 +372,7 @@ def index():
     #
 
     if command_action in STATS_CMDS:
-        stats_newline = u'I have {}'.format(get_stats())
+        stats_newline = get_stats()
         stats_comma = sub(u'\n', u', ', stats_newline)
         if not private_response:
             # send the message
