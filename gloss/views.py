@@ -221,7 +221,7 @@ def get_command_action_and_params(command_text):
     command_params = u' '.join(command_components[1:])
     return command_action, command_params
 
-def query_definition_and_get_response(command_text, user_name, channel_id, private_response):
+def query_definition_and_get_response(slash_command, command_text, user_name, channel_id, private_response):
     ''' Get the definition for the passed term and return the appropriate responses
     '''
     # query the definition
@@ -230,15 +230,15 @@ def query_definition_and_get_response(command_text, user_name, channel_id, priva
         # remember this query
         log_query(term=command_text, user_name=user_name, action=u'not_found')
 
-        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command */gloss {term} = <definition>*'.format(term=command_text), 200
+        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text), 200
 
     # remember this query
     log_query(term=command_text, user_name=user_name, action=u'found')
 
-    fallback = u'{} /gloss {}: {}'.format(user_name, entry.term, entry.definition)
+    fallback = u'{name} {command} {term}: {definition}'.format(name=user_name, command=slash_command, term=entry.term, definition=entry.definition)
     if not private_response:
         image_url = get_image_url(entry.definition)
-        pretext = u'*{}* /gloss {}'.format(user_name, command_text)
+        pretext = u'*{name}* {command} {text}'.format(name=user_name, command=slash_command, text=command_text)
         title = entry.term
         text = entry.definition
         send_webhook_with_attachment(channel_id=channel_id, text=text, fallback=fallback, pretext=pretext, title=title, image_url=image_url)
@@ -246,7 +246,7 @@ def query_definition_and_get_response(command_text, user_name, channel_id, priva
     else:
         return fallback, 200
 
-def set_definition_and_get_response(command_params, user_name):
+def set_definition_and_get_response(slash_command, command_params, user_name):
     ''' Set the definition for the passed parameters and return the approriate responses
     '''
     set_components = command_params.split('=', 1)
@@ -255,7 +255,7 @@ def set_definition_and_get_response(command_params, user_name):
 
     # reject poorly formed set commands
     if u'=' not in command_params or not set_term or not set_value:
-        return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: */gloss EW = Eligibility Worker*', 200
+        return u'Sorry, but *Gloss Bot* didn\'t understand your command. You can set definitions like this: *{command} EW = Eligibility Worker*'.format(command=slash_command), 200
 
     # reject attempts to set reserved terms
     if set_term.lower() in STATS_CMDS + RECENT_CMDS + HELP_CMDS:
@@ -307,6 +307,9 @@ def index():
     user_name = unicode(request.form['user_name'])
     channel_id = unicode(request.form['channel_id'])
 
+    # get the slash command
+    slash_command = unicode(request.form['command'])
+
     # strip excess spaces from the text
     full_text = unicode(request.form['text'].strip())
     full_text = sub(u' +', u' ', full_text)
@@ -319,7 +322,7 @@ def index():
     # if the text is a single word that's not a single-word command, treat it as a get
     if command_text.count(u' ') is 0 and len(command_text) > 0 and \
        command_text.lower() not in STATS_CMDS + RECENT_CMDS + HELP_CMDS + SET_CMDS:
-        return query_definition_and_get_response(command_text, user_name, channel_id, False)
+        return query_definition_and_get_response(slash_command, command_text, user_name, channel_id, False)
 
     #
     # SET definition
@@ -327,7 +330,7 @@ def index():
 
     # if the text contains an '=', treat it as a 'set' command
     if '=' in command_text:
-        return set_definition_and_get_response(command_text, user_name)
+        return set_definition_and_get_response(slash_command, command_text, user_name)
 
     # we'll respond privately if the text is prefixed with 'shh ' (or any number of s followed by any number of h)
     shh_pattern = compile(r'^s+h+ ')
@@ -365,7 +368,7 @@ def index():
     #
 
     if command_action in HELP_CMDS or command_text == u'' or command_text == u' ':
-        return u'*/gloss <term>* to show the definition for a term\n*/gloss <term> = <definition>* to set the definition for a term\n*/gloss delete <term>* to delete the definition for a term\n*/gloss help* to see this message\n*/gloss stats* to show usage statistics\n*/gloss learnings* to show recently defined terms\n*/gloss shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>', 200
+        return u'*{command} <term>* to show the definition for a term\n*{command} <term> = <definition>* to set the definition for a term\n*{command} delete <term>* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
 
     #
     # STATS
@@ -376,8 +379,8 @@ def index():
         stats_comma = sub(u'\n', u', ', stats_newline)
         if not private_response:
             # send the message
-            fallback = u'{} /gloss stats: {}'.format(user_name, stats_comma)
-            pretext = u'*{}* /gloss stats'.format(user_name)
+            fallback = u'{name} {command} stats: {comma}'.format(name=user_name, command=slash_command, comma=stats_comma)
+            pretext = u'*{name}* {command} stats'.format(name=user_name, command=slash_command)
             title = u''
             send_webhook_with_attachment(channel_id=channel_id, text=stats_newline, fallback=fallback, pretext=pretext, title=title)
             return u'', 200
@@ -395,8 +398,8 @@ def index():
         learnings_plain_text, learnings_rich_text = get_learnings(**recent_args)
         if not private_response:
             # send the message
-            fallback = u'{} /gloss learnings {}: {}'.format(user_name, command_params, learnings_plain_text)
-            pretext = u'*{}* /gloss learnings {}'.format(user_name, command_params)
+            fallback = u'{name} {command} learnings {params}: {text}'.format(name=user_name, command=slash_command, params=command_params, text=learnings_plain_text)
+            pretext = u'*{name}* {command} learnings {params}'.format(name=user_name, command=slash_command, params=command_params)
             title = u''
             send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title, mrkdwn_in=["text"])
             return u'', 200
@@ -409,4 +412,4 @@ def index():
     #
 
     # check the definition
-    return query_definition_and_get_response(command_text, user_name, channel_id, private_response)
+    return query_definition_and_get_response(slash_command, command_text, user_name, channel_id, private_response)
