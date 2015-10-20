@@ -7,7 +7,7 @@ from flask import current_app
 from gloss import create_app, db
 from gloss.models import Definition, Interaction
 from gloss.views import query_definition
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 import json
 
 class BotTestCase(unittest.TestCase):
@@ -412,7 +412,9 @@ class BotTestCase(unittest.TestCase):
                 attachment = payload['attachments'][0]
                 self.assertIsNotNone(attachment)
                 self.assertIsNotNone(attachment['title'])
-                self.assertTrue(u'I have no definitions.' in attachment['text'])
+                self.assertTrue(u'I don\'t have any definitions' in attachment['text'])
+                self.assertTrue(u'Nobody has defined terms' in attachment['text'])
+                self.assertTrue(u'Nobody has asked me for definitions' in attachment['text'])
                 self.assertIsNotNone(attachment['color'])
                 self.assertIsNotNone(attachment['fallback'])
                 return response(200)
