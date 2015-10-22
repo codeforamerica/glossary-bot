@@ -1,4 +1,5 @@
 from . import db
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from datetime import datetime
 
 class Definition(db.Model):
@@ -11,6 +12,7 @@ class Definition(db.Model):
     term = db.Column(db.Unicode(), index=True)
     definition = db.Column(db.Unicode())
     user_name = db.Column(db.Unicode())
+    tsv_search = db.Column(TSVECTOR)
 
     def __repr__(self):
         return '<Term: {}, Definition: {}>'.format(self.term, self.definition)
