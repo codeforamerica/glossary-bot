@@ -640,8 +640,8 @@ class BotTestCase(unittest.TestCase):
         for term in time_travelers:
             entry = query_definition(term)
             entry.creation_date = date_yesterday
-            db.session.add(entry)
-            db.session.commit()
+            self.db.session.add(entry)
+            self.db.session.commit()
 
         # get today's learnings
         robo_response = self.post_command(text=u'shh learnings today')
