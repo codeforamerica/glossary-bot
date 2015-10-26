@@ -1,38 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 import unittest
+import json
 from httmock import response, HTTMock
-from os import environ
 from flask import current_app
-from gloss import create_app, db
 from gloss.models import Definition, Interaction
 from gloss.views import query_definition
 from datetime import datetime, timedelta
-import json
+from tests.test_base import TestBase
 
-class BotTestCase(unittest.TestCase):
+class TestBot(TestBase):
 
     def setUp(self):
-        environ['DATABASE_URL'] = 'postgres:///glossary-bot-test'
-        environ['SLACK_TOKEN'] = 'meowser_token'
-        environ['SLACK_WEBHOOK_URL'] = 'http://hooks.example.com/services/HELLO/LOVELY/WORLD'
-
-        self.app = create_app(environ)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-
-        self.db = db
+        super(TestBot, self).setUp()
         self.db.create_all()
-
-        self.client = self.app.test_client()
-
-    def tearDown(self):
-        self.db.session.close()
-        self.db.drop_all()
-        self.app_context.pop()
-
-    def post_command(self, text, slash_command=u'/gloss'):
-        return self.client.post('/', data={'token': u'meowser_token', 'text': text, 'user_name': u'glossie', 'channel_id': u'123456', 'command': slash_command})
 
     def test_app_exists(self):
         ''' The app exists
