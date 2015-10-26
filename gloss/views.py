@@ -2,7 +2,7 @@ from flask import abort, current_app, request
 from . import gloss as app
 from . import db
 from models import Definition, Interaction
-from sqlalchemy import func, distinct, cast, DATE
+from sqlalchemy import func, distinct, cast, DATE, sql
 from re import compile, match, search, sub, UNICODE
 from requests import post
 from datetime import datetime, date, timedelta
@@ -48,7 +48,7 @@ def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretex
 
     # get the standard payload dict
     # :NOTE: sending text defined as 'pretext' to the standard payload and leaving
-    #        'pretext' in the attachment empty. so that I can use markdown styling.
+    #        'pretext' in the attachment empty so that I can use markdown styling.
     payload_values = get_payload_values(channel_id=channel_id, text=pretext)
     # build the attachment dict
     attachment_values = {}
@@ -213,6 +213,30 @@ def query_definition(term):
     '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
 
+def get_near_matches_for_term(term):
+    ''' Search the glossary for entries that are close matches for the passed term.
+    '''
+    # strip pattern-matching metacharacters from the term
+    stripped_term = sub(r'\||_|%|\*|\+|\?|\{|\}|\(|\)|\[|\]', '', term)
+    # get ILIKE matches for the term
+    # in SQL: SELECT term FROM definitions WHERE term ILIKE '%{}%'.format(stripped_term);
+    like_matches = Definition.query.filter(Definition.term.ilike(u'%{}%'.format(stripped_term)))
+    like_terms = [entry.term for entry in like_matches]
+
+    # get TSV matches for the term
+    tsv_matches = db.session.query('term').from_statement(sql.text(
+        '''SELECT * FROM definitions WHERE tsv_search @@ plainto_tsquery(:term) ORDER BY ts_rank(tsv_search, plainto_tsquery(:term)) DESC;'''
+    )).params(term=stripped_term)
+    tsv_terms = [entry[0] for entry in tsv_matches]
+
+    # put ilike matches that aren't in the TSV list at the front
+    match_terms = list(tsv_terms)
+    for check_term in like_terms:
+        if check_term not in tsv_terms:
+            match_terms.insert(0, check_term)
+
+    return match_terms
+
 def get_command_action_and_params(command_text):
     ''' Parse the passed string for a command action and parameters
     '''
@@ -230,7 +254,14 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         # remember this query
         log_query(term=command_text, user_name=user_name, action=u'not_found')
 
-        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text), 200
+        message = u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text)
+
+        search_results = get_near_matches_for_term(command_text)
+        if len(search_results):
+            search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
+            message = u'{}, or try asking for one of these terms that looks like a near match: {}'.format(message, search_results_styled)
+
+        return message, 200
 
     # remember this query
     log_query(term=command_text, user_name=user_name, action=u'found')
