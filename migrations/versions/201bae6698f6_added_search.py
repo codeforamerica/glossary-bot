@@ -1,4 +1,4 @@
-"""Added new column for ranked searching of terms and descriptions
+"""Added new column for ranked searching of terms and definitions
 
 Revision ID: 201bae6698f6
 Revises: 4614666a279f
@@ -29,7 +29,7 @@ def upgrade():
     '''))
 
     #
-    # Support full-text search on terms and descriptions
+    # Support full-text search on terms and definitions
     #
 
     # add the tsv_search column to the definitions table
@@ -46,7 +46,7 @@ def upgrade():
         begin
           new.tsv_search :=
              setweight(to_tsvector('pg_catalog.english', COALESCE(new.term,'')), 'A') ||
-             setweight(to_tsvector('pg_catalog.english', COALESCE(new.description,'')), 'B');
+             setweight(to_tsvector('pg_catalog.english', COALESCE(new.definition,'')), 'B');
           return new;
         end
         $$ LANGUAGE plpgsql;
@@ -69,7 +69,7 @@ def upgrade():
 
     # populate tsv_search for existing records
     db_bind.execute(sa.sql.text('''
-        UPDATE definitions SET tsv_search = setweight(to_tsvector('pg_catalog.english', COALESCE(term,'')), 'A') || setweight(to_tsvector('pg_catalog.english', COALESCE(description,'')), 'B');
+        UPDATE definitions SET tsv_search = setweight(to_tsvector('pg_catalog.english', COALESCE(term,'')), 'A') || setweight(to_tsvector('pg_catalog.english', COALESCE(definition,'')), 'B');
     '''))
 
 def downgrade():
@@ -88,7 +88,7 @@ def downgrade():
     '''))
 
     #
-    # Remove support for full-text search on terms and descriptions
+    # Remove support for full-text search on terms and definitions
     #
 
     # drop the tsv_search column from the definitions table
