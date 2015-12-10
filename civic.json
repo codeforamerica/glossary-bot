@@ -1,4 +1,12 @@
 {
-    "status": "Production",
-    "tags": ["slack", "bot", "integration", "python", "flask", "glossary", "dictionary"]
+    "status": "Official", 
+    "tags": [
+        "slack", 
+        "bot", 
+        "glossary", 
+        "onboarding", 
+        "integration", 
+        "flask", 
+        "dictionary"
+    ]
 }
