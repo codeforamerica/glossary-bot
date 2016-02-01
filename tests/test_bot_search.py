@@ -45,5 +45,39 @@ class TestBotSearch(TestBase):
         match_text = ', '.join(['*{}*'.format(item[0]) for item in matches])
         self.assertTrue(match_text in robo_response.data)
 
+    def test_search_results(self):
+        ''' A search of terms and definitions returns the expected results.
+        '''
+        # set some definitions
+        matches = [
+            (u'CalWIN', u'CalWORKs Information Network, a service supporting the administration of public assistance programs in a consortium of California counties, including CalFresh, Medi-Cal, General Assistance, and Foster Care. Part of SAWS.'),
+            (u'TAY', u'Transitional Age Youth, people between the ages of sixteen and twenty-four who are in transition from state custody or foster care and are at-risk.'),
+            (u'SAWS', u'the Statewide Automated Welfare System, made up of multiple systems (including C-IV, CalWin and LEADER) which support eligibility and benefit determination, enrollment, and case maintenance at the county level for some of California\'s major health and human services programs.'),
+            (u'WIB', u'Workforce Investment Board, a regional entity created to implement the Workforce Investment Act of 1998 by directing federal, state and local funding to workforce development programs.'),
+            (u'ACYF', u'Administration for Children, Youth and Families, a part of the Administration for Children and Families, under the Department of Health and Human Services, administered by a commissioner who is a presidential appointee. ACYF is divided into two bureaus: the Children\'s Bureau and the Family and Youth Services Bureau, each of which is responsible for different issues involving children, youth and families and with a cross-cutting unit responsible for research and evaluation.')
+        ]
+        # set the definitions in random order
+        randomized_matches = list(matches)
+        random.shuffle(randomized_matches)
+        for post_match in randomized_matches:
+            self.post_command(text=u'{} = {}'.format(post_match[0], post_match[1]))
+
+        # make some searchs and verify that they come back as expected
+        robo_response = self.post_command(text=u'search youth')
+        self.assertTrue('following terms: *ACYF*, *TAY*' in robo_response.data)
+
+        robo_response = self.post_command(text=u'search saws')
+        self.assertTrue('following terms: *SAWS*, *CalWIN*' in robo_response.data)
+
+        robo_response = self.post_command(text=u'search calwin')
+        self.assertTrue('following terms: *CalWIN*, *SAWS*')
+
+        robo_response = self.post_command(text=u'search state')
+        self.assertTrue('*TAY*' in robo_response.data)
+        self.assertTrue('*WIB*' in robo_response.data)
+
+        robo_response = self.post_command(text=u'search banana')
+        self.assertTrue('*banana* was not found in any terms or definitions.' in robo_response.data)
+
 if __name__ == '__main__':
     unittest.main()

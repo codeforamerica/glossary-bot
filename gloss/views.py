@@ -14,6 +14,7 @@ RECENT_CMDS = (u'learnings',)
 HELP_CMDS = (u'help', u'?')
 SET_CMDS = (u'=',)
 DELETE_CMDS = (u'delete',)
+SEARCH_CMDS = (u'search',)
 
 '''
 values posted by Slack:
@@ -213,8 +214,8 @@ def query_definition(term):
     '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
 
-def get_near_matches_for_term(term):
-    ''' Search the glossary for entries that are close matches for the passed term.
+def get_matches_for_term(term):
+    ''' Search the glossary for entries that are matches for the passed term.
     '''
     # strip pattern-matching metacharacters from the term
     stripped_term = sub(r'\||_|%|\*|\+|\?|\{|\}|\(|\)|\[|\]', '', term)
@@ -254,9 +255,9 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         # remember this query
         log_query(term=command_text, user_name=user_name, action=u'not_found')
 
-        message = u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text)
+        message = u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = _definition_*'.format(command=slash_command, term=command_text)
 
-        search_results = get_near_matches_for_term(command_text)
+        search_results = get_matches_for_term(command_text)
         if len(search_results):
             search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
             message = u'{}, or try asking for one of these terms that looks like a near match: {}'.format(message, search_results_styled)
@@ -276,6 +277,19 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         return u'', 200
     else:
         return fallback, 200
+
+def search_term_and_get_response(command_text):
+    ''' Search the database for the passed term and return the results
+    '''
+    # query the definition
+    search_results = get_matches_for_term(command_text)
+    if len(search_results):
+        search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
+        message = u'*{}* was found in the following terms: {}'.format(command_text, search_results_styled)
+    else:
+        message = u'*{}* was not found in any terms or definitions.'.format(command_text)
+
+    return message, 200
 
 def set_definition_and_get_response(slash_command, command_params, user_name):
     ''' Set the definition for the passed parameters and return the approriate responses
@@ -395,11 +409,20 @@ def index():
         return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     #
+    # SEARCH for a string
+    #
+
+    if command_action in SEARCH_CMDS:
+        search_term = command_params
+
+        return search_term_and_get_response(search_term)
+
+    #
     # HELP
     #
 
     if command_action in HELP_CMDS or command_text == u'' or command_text == u' ':
-        return u'*{command} <term>* to show the definition for a term\n*{command} <term> = <definition>* to set the definition for a term\n*{command} delete <term>* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
+        return u'*{command} _term_* to show the definition for a term\n*{command} _term_ = _definition_* to set the definition for a term\n*{command} delete _term_* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} search _term_* to search terms and definitions\n*{command} shh _command_* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
 
     #
     # STATS
