@@ -120,7 +120,7 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
-def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
+def get_learnings(how_many=12, sort_order=u'recent', offset=0):
     ''' Gather and return some recent definitions
     '''
     order_descending = Definition.creation_date.desc()
@@ -139,21 +139,8 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
         prefix_singluar = u'I know the definition for'
         prefix_plural = u'I know definitions for'
 
-    if when == u'today':
-        prefix_singluar = u'Today I learned the definition for'
-        prefix_plural = u'Today I learned definitions for'
-        no_definitions_text = u'I haven\'t learned any definitions today.'
-        definitions = db.session.query(Definition).order_by(order_function).filter(cast(Definition.creation_date, DATE) == date.today()).all()
-
-    elif when == u'yesterday':
-        prefix_singluar = u'Yesterday I learned the definition for'
-        prefix_plural = u'Yesterday I learned definitions for'
-        no_definitions_text = u'I didn\'t learn any definitions yesterday.'
-        date_yesterday = date.today() - timedelta(days=1)
-        definitions = db.session.query(Definition).order_by(order_function).filter(cast(Definition.creation_date, DATE) == date_yesterday).all()
-
     # if how_many is 0, ignore offset and return all results
-    elif how_many == 0:
+    if how_many == 0:
         definitions = db.session.query(Definition).order_by(order_function).all()
     # if order is random and there is an offset, randomize the results after the query
     elif sort_order == u'random' and offset > 0:
@@ -185,9 +172,6 @@ def parse_learnings_params(command_params):
             continue
         if param == u'all':
             recent_args['how_many'] = 0
-            continue
-        if param in (u'today', u'yesterday'):
-            recent_args['when'] = param
             continue
         try:
             passed_int = int(param)
