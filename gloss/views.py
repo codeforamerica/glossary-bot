@@ -244,7 +244,7 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         search_results = get_matches_for_term(command_text)
         if len(search_results):
             search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
-            message = u'{}, or try asking for one of these terms that looks like a near match: {}'.format(message, search_results_styled)
+            message = u'{}, or try asking for one of these terms that may be related: {}'.format(message, search_results_styled)
 
         return message, 200
 
