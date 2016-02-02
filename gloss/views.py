@@ -269,9 +269,9 @@ def search_term_and_get_response(command_text):
     search_results = get_matches_for_term(command_text)
     if len(search_results):
         search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
-        message = u'*{}* was found in the following terms: {}'.format(command_text, search_results_styled)
+        message = u'Gloss Bot found *{}* in: {}'.format(command_text, search_results_styled)
     else:
-        message = u'*{}* was not found in any terms or definitions.'.format(command_text)
+        message = u'Gloss Bot could not find *{}* in any terms or definitions.'.format(command_text)
 
     return message, 200
 

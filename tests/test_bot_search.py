@@ -64,20 +64,20 @@ class TestBotSearch(TestBase):
 
         # make some searchs and verify that they come back as expected
         robo_response = self.post_command(text=u'search youth')
-        self.assertTrue('following terms: *ACYF*, *TAY*' in robo_response.data)
+        self.assertTrue('found *youth* in: *ACYF*, *TAY*' in robo_response.data)
 
         robo_response = self.post_command(text=u'search saws')
-        self.assertTrue('following terms: *SAWS*, *CalWIN*' in robo_response.data)
+        self.assertTrue('found *saws* in: *SAWS*, *CalWIN*' in robo_response.data)
 
         robo_response = self.post_command(text=u'search calwin')
-        self.assertTrue('following terms: *CalWIN*, *SAWS*')
+        self.assertTrue('found *calwin* in: *CalWIN*, *SAWS*')
 
         robo_response = self.post_command(text=u'search state')
         self.assertTrue('*TAY*' in robo_response.data)
         self.assertTrue('*WIB*' in robo_response.data)
 
         robo_response = self.post_command(text=u'search banana')
-        self.assertTrue('*banana* was not found in any terms or definitions.' in robo_response.data)
+        self.assertTrue('Gloss Bot could not find *banana* in any terms or definitions.' in robo_response.data)
 
 if __name__ == '__main__':
     unittest.main()
