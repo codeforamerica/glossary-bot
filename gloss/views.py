@@ -239,7 +239,7 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         # remember this query
         log_query(term=command_text, user_name=user_name, action=u'not_found')
 
-        message = u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = _definition_*'.format(command=slash_command, term=command_text)
+        message = u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text)
 
         search_results = get_matches_for_term(command_text)
         if len(search_results):
@@ -406,7 +406,7 @@ def index():
     #
 
     if command_action in HELP_CMDS or command_text == u'' or command_text == u' ':
-        return u'*{command} _term_* to show the definition for a term\n*{command} _term_ = _definition_* to set the definition for a term\n*{command} delete _term_* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} search _term_* to search terms and definitions\n*{command} shh _command_* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
+        return u'*{command} <term>* to show the definition for a term\n*{command} <term> = <definition>* to set the definition for a term\n*{command} delete <term>* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} search <term>* to search terms and definitions\n*{command} shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
 
     #
     # STATS
