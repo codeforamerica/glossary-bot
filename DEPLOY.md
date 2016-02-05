@@ -71,7 +71,7 @@ Here's what to do if you've got an older version of Gloss Bot on Heroku and want
 
 ##### If you used the Deploy To Heroku button
 
-If you intalled Gloss Bot using the *Deploy to Heroku* button, follow the steps below. If not, [skip ahead](#if-you-did-not-use-the-deploy-to-heroku-button).
+If you installed Gloss Bot using the *Deploy to Heroku* button, follow the steps below. If not, [skip ahead](#if-you-did-not-use-the-deploy-to-heroku-button).
 
 First, make sure you've got the basics set up by following [Heroku's instructions for getting started with Python](https://devcenter.heroku.com/articles/getting-started-with-python-o).
 
