@@ -1,38 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 import unittest
+import json
 from httmock import response, HTTMock
-from os import environ
 from flask import current_app
-from gloss import create_app, db
 from gloss.models import Definition, Interaction
 from gloss.views import query_definition
 from datetime import datetime, timedelta
-import json
+from tests.test_base import TestBase
 
-class BotTestCase(unittest.TestCase):
+class TestBot(TestBase):
 
     def setUp(self):
-        environ['DATABASE_URL'] = 'postgres:///glossary-bot-test'
-        environ['SLACK_TOKEN'] = 'meowser_token'
-        environ['SLACK_WEBHOOK_URL'] = 'http://hooks.example.com/services/HELLO/LOVELY/WORLD'
-
-        self.app = create_app(environ)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-
-        self.db = db
+        super(TestBot, self).setUp()
         self.db.create_all()
-
-        self.client = self.app.test_client()
-
-    def tearDown(self):
-        self.db.session.close()
-        self.db.drop_all()
-        self.app_context.pop()
-
-    def post_command(self, text, slash_command=u'/gloss'):
-        return self.client.post('/', data={'token': u'meowser_token', 'text': text, 'user_name': u'glossie', 'channel_id': u'123456', 'command': slash_command})
 
     def test_app_exists(self):
         ''' The app exists
@@ -621,37 +602,6 @@ class BotTestCase(unittest.TestCase):
         robo_response = self.post_command(text=u'shh learnings {} {}'.format(limit, offset))
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue(u', '.join(check) in robo_response.data)
-
-    def test_today_and_yesterday_learnings(self):
-        ''' Today's learnings are returned when requested
-        '''
-        # set some values in the database
-        letters = [u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'W', u'X']
-        check = []
-        for letter in letters:
-            self.post_command(text=u'{letter}W = {letter}ligibility Worker'.format(letter=letter))
-            check.insert(0, u'{}W'.format(letter))
-
-        # change the date on some of the values
-        change_count = 11
-        time_travelers = check[:change_count]
-        check = check[change_count:]
-        date_yesterday = datetime.utcnow() - timedelta(days=1)
-        for term in time_travelers:
-            entry = query_definition(term)
-            entry.creation_date = date_yesterday
-            db.session.add(entry)
-            db.session.commit()
-
-        # get today's learnings
-        robo_response = self.post_command(text=u'shh learnings today')
-        self.assertEqual(robo_response.status_code, 200)
-        self.assertTrue(u', '.join(check) in robo_response.data)
-
-        # get yesterday's
-        robo_response = self.post_command(text=u'shh learnings yesterday')
-        self.assertEqual(robo_response.status_code, 200)
-        self.assertTrue(u', '.join(time_travelers) in robo_response.data)
 
     def test_learnings_language(self):
         ''' Language describing learnings is numerically accurate

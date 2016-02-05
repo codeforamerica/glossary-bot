@@ -78,5 +78,5 @@ python manage.py runtests
 or run an individual test:
 
 ```
-python tests/test_bot.py BotTestCase.test_get_definition
+python tests/test_bot.py TestBot.test_get_definition
 ```

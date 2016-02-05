@@ -2,7 +2,7 @@ from flask import abort, current_app, request
 from . import gloss as app
 from . import db
 from models import Definition, Interaction
-from sqlalchemy import func, distinct, cast, DATE
+from sqlalchemy import func, distinct, cast, DATE, sql
 from re import compile, match, search, sub, UNICODE
 from requests import post
 from datetime import datetime, date, timedelta
@@ -14,6 +14,7 @@ RECENT_CMDS = (u'learnings',)
 HELP_CMDS = (u'help', u'?')
 SET_CMDS = (u'=',)
 DELETE_CMDS = (u'delete',)
+SEARCH_CMDS = (u'search',)
 
 '''
 values posted by Slack:
@@ -48,7 +49,7 @@ def send_webhook_with_attachment(channel_id=u'', text=None, fallback=u'', pretex
 
     # get the standard payload dict
     # :NOTE: sending text defined as 'pretext' to the standard payload and leaving
-    #        'pretext' in the attachment empty. so that I can use markdown styling.
+    #        'pretext' in the attachment empty so that I can use markdown styling.
     payload_values = get_payload_values(channel_id=channel_id, text=pretext)
     # build the attachment dict
     attachment_values = {}
@@ -119,7 +120,7 @@ def get_stats():
     # return the message
     return u'\n'.join(lines)
 
-def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
+def get_learnings(how_many=12, sort_order=u'recent', offset=0):
     ''' Gather and return some recent definitions
     '''
     order_descending = Definition.creation_date.desc()
@@ -138,21 +139,8 @@ def get_learnings(how_many=12, sort_order=u'recent', offset=0, when=None):
         prefix_singluar = u'I know the definition for'
         prefix_plural = u'I know definitions for'
 
-    if when == u'today':
-        prefix_singluar = u'Today I learned the definition for'
-        prefix_plural = u'Today I learned definitions for'
-        no_definitions_text = u'I haven\'t learned any definitions today.'
-        definitions = db.session.query(Definition).order_by(order_function).filter(cast(Definition.creation_date, DATE) == date.today()).all()
-
-    elif when == u'yesterday':
-        prefix_singluar = u'Yesterday I learned the definition for'
-        prefix_plural = u'Yesterday I learned definitions for'
-        no_definitions_text = u'I didn\'t learn any definitions yesterday.'
-        date_yesterday = date.today() - timedelta(days=1)
-        definitions = db.session.query(Definition).order_by(order_function).filter(cast(Definition.creation_date, DATE) == date_yesterday).all()
-
     # if how_many is 0, ignore offset and return all results
-    elif how_many == 0:
+    if how_many == 0:
         definitions = db.session.query(Definition).order_by(order_function).all()
     # if order is random and there is an offset, randomize the results after the query
     elif sort_order == u'random' and offset > 0:
@@ -185,9 +173,6 @@ def parse_learnings_params(command_params):
         if param == u'all':
             recent_args['how_many'] = 0
             continue
-        if param in (u'today', u'yesterday'):
-            recent_args['when'] = param
-            continue
         try:
             passed_int = int(param)
             if 'how_many' not in recent_args:
@@ -213,6 +198,30 @@ def query_definition(term):
     '''
     return Definition.query.filter(func.lower(Definition.term) == func.lower(term)).first()
 
+def get_matches_for_term(term):
+    ''' Search the glossary for entries that are matches for the passed term.
+    '''
+    # strip pattern-matching metacharacters from the term
+    stripped_term = sub(r'\||_|%|\*|\+|\?|\{|\}|\(|\)|\[|\]', '', term)
+    # get ILIKE matches for the term
+    # in SQL: SELECT term FROM definitions WHERE term ILIKE '%{}%'.format(stripped_term);
+    like_matches = Definition.query.filter(Definition.term.ilike(u'%{}%'.format(stripped_term)))
+    like_terms = [entry.term for entry in like_matches]
+
+    # get TSV matches for the term
+    tsv_matches = db.session.query('term').from_statement(sql.text(
+        '''SELECT * FROM definitions WHERE tsv_search @@ plainto_tsquery(:term) ORDER BY ts_rank(tsv_search, plainto_tsquery(:term)) DESC;'''
+    )).params(term=stripped_term)
+    tsv_terms = [entry[0] for entry in tsv_matches]
+
+    # put ilike matches that aren't in the TSV list at the front
+    match_terms = list(tsv_terms)
+    for check_term in like_terms:
+        if check_term not in tsv_terms:
+            match_terms.insert(0, check_term)
+
+    return match_terms
+
 def get_command_action_and_params(command_text):
     ''' Parse the passed string for a command action and parameters
     '''
@@ -230,7 +239,14 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         # remember this query
         log_query(term=command_text, user_name=user_name, action=u'not_found')
 
-        return u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text), 200
+        message = u'Sorry, but *Gloss Bot* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*'.format(command=slash_command, term=command_text)
+
+        search_results = get_matches_for_term(command_text)
+        if len(search_results):
+            search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
+            message = u'{}, or try asking for one of these terms that may be related: {}'.format(message, search_results_styled)
+
+        return message, 200
 
     # remember this query
     log_query(term=command_text, user_name=user_name, action=u'found')
@@ -245,6 +261,19 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         return u'', 200
     else:
         return fallback, 200
+
+def search_term_and_get_response(command_text):
+    ''' Search the database for the passed term and return the results
+    '''
+    # query the definition
+    search_results = get_matches_for_term(command_text)
+    if len(search_results):
+        search_results_styled = ', '.join([u'*{}*'.format(term) for term in search_results])
+        message = u'Gloss Bot found *{}* in: {}'.format(command_text, search_results_styled)
+    else:
+        message = u'Gloss Bot could not find *{}* in any terms or definitions.'.format(command_text)
+
+    return message, 200
 
 def set_definition_and_get_response(slash_command, command_params, user_name):
     ''' Set the definition for the passed parameters and return the approriate responses
@@ -364,11 +393,20 @@ def index():
         return u'*Gloss Bot* has deleted the definition for *{}*, which was *{}*'.format(delete_term, entry.definition), 200
 
     #
+    # SEARCH for a string
+    #
+
+    if command_action in SEARCH_CMDS:
+        search_term = command_params
+
+        return search_term_and_get_response(search_term)
+
+    #
     # HELP
     #
 
     if command_action in HELP_CMDS or command_text == u'' or command_text == u' ':
-        return u'*{command} <term>* to show the definition for a term\n*{command} <term> = <definition>* to set the definition for a term\n*{command} delete <term>* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
+        return u'*{command} <term>* to show the definition for a term\n*{command} <term> = <definition>* to set the definition for a term\n*{command} delete <term>* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} search <term>* to search terms and definitions\n*{command} shh <command>* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>'.format(command=slash_command), 200
 
     #
     # STATS

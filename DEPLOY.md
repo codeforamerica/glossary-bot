@@ -69,13 +69,75 @@ And you're good to get glossing! Open up Slack and type `/gloss help` to start.
 
 Here's what to do if you've got an older version of Gloss Bot on Heroku and want to upgrade to the latest version. First, guarantee that you've got a backup of your database by following the instructions in [Heroku's PGBackups documentation](https://devcenter.heroku.com/articles/heroku-postgres-backups).
 
-Now, do a `git pull` in your local glossbot directory:
+##### If you used the Deploy To Heroku button
+
+If you intalled Gloss Bot using the *Deploy to Heroku* button, follow the steps below. If not, [skip ahead](#if-you-did-not-use-the-deploy-to-heroku-button).
+
+First, make sure you've got the basics set up by following [Heroku's instructions for getting started with Python](https://devcenter.heroku.com/articles/getting-started-with-python-o).
+
+Open the terminal and clone the Gloss Bot repository onto your machine:
+
+```
+git clone git@github.com:codeforamerica/glossary-bot.git
+```
+
+Then change into the resulting directory:
+
+```
+cd glossary-bot
+```
+
+Find the name of the heroku app that's running Gloss Bot by typing:
+
+```
+heroku apps
+```
+
+This'll show you a list of apps, one of which should be your Gloss Bot instance.
+
+If you're not sure which app is the Gloss Bot app, go to [your Slack's custom integrations page](https://my.slack.com/apps/manage/custom-integrations), click into *Slash Commands*, and find the slash command you configured for Gloss Bot. It'll say something like _When a user enters /gloss, POST to https://my-cool-bot-12345.herokuapp.com/_. Whatever's in the URL in place of 'my-cool-bot-12345' is the name of your app.
+
+Back in the terminal, get more info on the app by typing (replacing _my-cool-bot-12345_ with the name of your app):
+
+```
+heroku info --app my-cool-bot-12345
+```
+
+You'll see a list of information about the app, including its `Git URL`. Copy the URL and use it in this command:
+
+```
+git remote add heroku https://git.heroku.com/my-cool-bot-12345.git
+```
+
+With that command, you've connected your local copy of the Gloss Bot repository to your app on Heroku! You can verify the change like this:
+
+```
+git remote -v
+```
+
+Now, push the latest code to your app on Heroku:
+
+```
+git push -f heroku master
+```
+
+And upgrade the database:
+
+```
+heroku run python manage.py db upgrade --app my-cool-bot-12345
+```
+
+And your Gloss Bot has been updated!
+
+##### If you did not use the Deploy To Heroku button
+
+Change into your local Gloss Bot directory and pull the latest code:
 
 ```
 git pull
 ```
 
-And deploy it to Heroku:
+Deploy it to Heroku:
 
 ```
 git push heroku master
