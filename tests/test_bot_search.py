@@ -77,7 +77,7 @@ class TestBotSearch(TestBase):
         self.assertTrue('*WIB*' in robo_response.data)
 
         robo_response = self.post_command(text=u'search banana')
-        self.assertTrue('Gloss Bot could not find *banana* in any terms or definitions.' in robo_response.data)
+        self.assertTrue('could not find *banana* in any terms or definitions.' in robo_response.data)
 
 if __name__ == '__main__':
     unittest.main()
