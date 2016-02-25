@@ -2,10 +2,10 @@ from flask import abort, current_app, request
 from . import gloss as app
 from . import db
 from models import Definition, Interaction
-from sqlalchemy import func, distinct, cast, DATE, sql
+from sqlalchemy import func, distinct, sql
 from re import compile, match, search, sub, UNICODE
 from requests import post
-from datetime import datetime, date, timedelta
+from datetime import datetime
 import json
 import random
 
