@@ -4,7 +4,7 @@ import unittest
 import logging
 import random
 from flask_migrate import upgrade
-from flask.ext.migrate import Migrate
+from flask_migrate import Migrate
 from tests.test_base import TestBase
 
 class TestBotSearch(TestBase):

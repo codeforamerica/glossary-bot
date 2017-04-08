@@ -1,5 +1,5 @@
 from flask import Blueprint, Flask
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 gloss = Blueprint('gloss', __name__)
 db = SQLAlchemy()
