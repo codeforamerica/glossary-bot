@@ -10,7 +10,7 @@ import json
 import random
 
 STATS_CMDS = ("stats",)
-RECENT_CMDS = ("learnings",)
+RECENT_CMDS = ("learnings", "recent")
 HELP_CMDS = ("help", "?")
 SET_CMDS = ("=",)
 DELETE_CMDS = ("delete",)
