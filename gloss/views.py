@@ -16,6 +16,8 @@ SET_CMDS = ("=",)
 DELETE_CMDS = ("delete",)
 SEARCH_CMDS = ("search",)
 
+ALIAS_KEYWORDS = ("see also", "see")
+
 BOT_NAME = "Gloss Bot"
 BOT_EMOJI = ":lipstick:"
 
@@ -246,6 +248,16 @@ def get_command_action_and_params(command_text):
     command_params = " ".join(command_components[1:])
     return command_action, command_params
 
+def check_definition_for_alias(definition):
+    ''' If the passed definition starts with a keyword in ALIAS_KEYWORDS, strip
+        that prefix from the definition and return it.
+    '''
+    for keyword in ALIAS_KEYWORDS:
+        if definition.lower().startswith(keyword):
+            return definition.split(keyword, 1)[1].strip()
+
+    return None
+
 def query_definition_and_get_response(slash_command, command_text, user_name, channel_id, private_response):
     ''' Get the definition for the passed term and return the appropriate responses
     '''
@@ -266,6 +278,15 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
 
     # remember this query
     log_query(term=command_text, user_name=user_name, action="found")
+
+    # if the definition starts with an alias keyphrase, check to see if the rest
+    # of the definition matches another entry, and return that definition instead
+    alias_term = check_definition_for_alias(entry.definition)
+    if alias_term:
+        alias_entry = query_definition(alias_term)
+
+        if alias_entry:
+            entry = alias_entry
 
     fallback = "{name} {command} {term}: {definition}".format(name=user_name, command=slash_command, term=entry.term, definition=entry.definition)
     if not private_response:
