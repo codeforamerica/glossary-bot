@@ -28,11 +28,11 @@ class TestBotSearch(TestBase):
         # set some definitions
         # this is the order the matches should be returned in
         matches = [
-            ("pastinkmy", "a funky lunchmeat"),
-            ("stinked stink", "a really bad smell"),
-            ("standard stink", "a bad smell"),
-            ("foul odor", "a stink that is really stinking up the room"),
-            ("stench", "a prominent stink")
+            ("abglosscd", "a cool thing"),
+            ("glossed gloss", "a really useful tool"),
+            ("standard gloss", "a good resource"),
+            ("dictionary helper", "a gloss that is really glossing my world"),
+            ("luster", "a prominent gloss")
         ]
         # set the definitions in random order
         randomized_matches = list(matches)
@@ -41,9 +41,9 @@ class TestBotSearch(TestBase):
             self.post_command(text="{} = {}".format(post_match[0], post_match[1]))
 
         # request a definition that doesn't exist, but that will generate suggestions
-        robo_response = self.post_command(text="shh stink")
+        robo_response = self.post_command(text="shh gloss")
         match_text = ', '.join(['*{}*'.format(item[0]) for item in matches])
-        self.assertTrue(match_text in robo_response.data)
+        self.assertTrue(match_text.encode('utf-8') in robo_response.data)
 
     def test_search_results(self):
         ''' A search of terms and definitions returns the expected results.
@@ -64,20 +64,20 @@ class TestBotSearch(TestBase):
 
         # make some searchs and verify that they come back as expected
         robo_response = self.post_command(text="search youth")
-        self.assertTrue('found *youth* in: *ACYF*, *TAY*' in robo_response.data)
+        self.assertTrue('found *youth* in: *ACYF*, *TAY*'.encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="search saws")
-        self.assertTrue('found *saws* in: *SAWS*, *CalWIN*' in robo_response.data)
+        self.assertTrue('found *saws* in: *SAWS*, *CalWIN*'.encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="search calwin")
-        self.assertTrue('found *calwin* in: *CalWIN*, *SAWS*')
+        self.assertTrue('found *calwin* in: *CalWIN*, *SAWS*'.encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="search state")
-        self.assertTrue('*TAY*' in robo_response.data)
-        self.assertTrue('*WIB*' in robo_response.data)
+        self.assertTrue('*TAY*'.encode('utf-8') in robo_response.data)
+        self.assertTrue('*WIB*'.encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="search banana")
-        self.assertTrue('could not find *banana* in any terms or definitions.' in robo_response.data)
+        self.assertTrue('could not find *banana* in any terms or definitions.'.encode('utf-8') in robo_response.data)
 
 if __name__ == '__main__':
     unittest.main()
