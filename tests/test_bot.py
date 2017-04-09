@@ -5,8 +5,6 @@ import json
 from httmock import response, HTTMock
 from flask import current_app
 from gloss.models import Definition, Interaction
-from gloss.views import query_definition
-from datetime import datetime, timedelta
 from tests.test_base import TestBase
 
 class TestBot(TestBase):
