@@ -422,7 +422,7 @@ def index():
     #
 
     if command_action in HELP_CMDS or command_text.strip() == "":
-        return "*{command} _term_* to show the definition for a term\n*{command} _term_ = _definition_* to set the definition for a term\n*{command} delete _term_* to delete the definition for a term\n*{command} help* to see this message\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} search _term_* to search terms and definitions\n*{command} shh _command_* to get a private response\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>".format(command=slash_command), 200
+        return "*{command} _term_* to show the definition for a term\n*{command} _term_ = _definition_* to set the definition for a term\n*{command} delete _term_* to delete the definition for a term\n*{command} stats* to show usage statistics\n*{command} learnings* to show recently defined terms\n*{command} search _term_* to search terms and definitions\n*{command} shh _command_* to get a private response\n*{command} help* to see this message\n<https://github.com/codeforamerica/glossary-bot/issues|report bugs and request features>".format(command=slash_command), 200
 
     #
     # STATS
