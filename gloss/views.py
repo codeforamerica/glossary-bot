@@ -84,6 +84,19 @@ def get_image_url(text):
 
     return None
 
+def make_bold(text):
+    ''' make the passed text bold, accounting for newlines
+    '''
+    newline_split = text.split("\n")
+    bold_split = []
+    for line in newline_split:
+        bold_line = line
+        if line.strip() != "":
+            bold_line = "*{}*".format(line.strip())
+        bold_split.append(bold_line)
+
+    return "\n".join(bold_split)
+
 def verify_url(text):
     ''' verify that the passed text is a URL
 
@@ -157,7 +170,7 @@ def get_learnings(how_many=12, sort_order="recent", offset=0):
 
     wording = prefix_plural if len(definitions) > 1 else prefix_singluar
     plain_text = "{}: {}".format(wording, ', '.join([item.term for item in definitions]))
-    rich_text = "{}: {}".format(wording, ', '.join(["*{}*".format(item.term) for item in definitions]))
+    rich_text = "{}: {}".format(wording, ', '.join([make_bold(item.term) for item in definitions]))
     return plain_text, rich_text
 
 def parse_learnings_params(command_params):
@@ -242,11 +255,11 @@ def query_definition_and_get_response(slash_command, command_text, user_name, ch
         # remember this query
         log_query(term=command_text, user_name=user_name, action="not_found")
 
-        message = "Sorry, but *{bot_name}* has no definition for *{term}*. You can set a definition with the command *{command} {term} = <definition>*".format(bot_name=BOT_NAME, command=slash_command, term=command_text)
+        message = "Sorry, but *{bot_name}* has no definition for *{term}*. You can set a definition with the command *{command} {term} = _definition_*".format(bot_name=BOT_NAME, command=slash_command, term=command_text)
 
         search_results = get_matches_for_term(command_text)
         if len(search_results):
-            search_results_styled = ', '.join(["*{}*".format(term) for term in search_results])
+            search_results_styled = ', '.join([make_bold(term) for term in search_results])
             message = "{}, or try asking for one of these terms that may be related: {}".format(message, search_results_styled)
 
         return message, 200
@@ -271,10 +284,10 @@ def search_term_and_get_response(command_text):
     # query the definition
     search_results = get_matches_for_term(command_text)
     if len(search_results):
-        search_results_styled = ', '.join(["*{}*".format(term) for term in search_results])
-        message = "{} found *{}* in: {}".format(BOT_NAME, command_text, search_results_styled)
+        search_results_styled = ', '.join([make_bold(term) for term in search_results])
+        message = "{bot_name} found {term} in: {results}".format(bot_name=BOT_NAME, term=make_bold(command_text), results=search_results_styled)
     else:
-        message = "{} could not find *{}* in any terms or definitions.".format(BOT_NAME, command_text)
+        message = "{bot_name} could not find {term} in any terms or definitions.".format(bot_name=BOT_NAME, term=make_bold(command_text))
 
     return message, 200
 
@@ -291,7 +304,7 @@ def set_definition_and_get_response(slash_command, command_params, user_name):
 
     # reject attempts to set reserved terms
     if set_term.lower() in STATS_CMDS + RECENT_CMDS + HELP_CMDS:
-        return "Sorry, but *{}* can't set a definition for *{}* because it's a reserved term.".format(BOT_NAME, set_term)
+        return "Sorry, but *{bot_name}* can't set a definition for {term} because it's a reserved term.".format(bot_name=BOT_NAME, term=make_bold(set_term))
 
     # check the database to see if the term's already defined
     entry = query_definition(set_term)
@@ -308,12 +321,12 @@ def set_definition_and_get_response(slash_command, command_params, user_name):
                 db.session.add(entry)
                 db.session.commit()
             except Exception as e:
-                return "Sorry, but *{}* was unable to update that definition: {}, {}".format(BOT_NAME, e.message, e.args), 200
+                return "Sorry, but *{bot_name}* was unable to update that definition: {message}, {args}".format(bot_name=BOT_NAME, message=e.message, args=e.args), 200
 
-            return "*{}* has set the definition for *{}* to *{}*, overwriting the previous entry, which was *{}* defined as *{}*".format(BOT_NAME, set_term, set_value, last_term, last_value), 200
+            return "*{bot_name}* has set the definition for {term} to {definition}, overwriting the previous entry, which was {prev_term} defined as {prev_def}".format(bot_name=BOT_NAME, term=make_bold(set_term), definition=make_bold(set_value), prev_term=make_bold(last_term), prev_def=make_bold(last_value)), 200
 
         else:
-            return "*{}* already knows that the definition for *{}* is *{}*".format(BOT_NAME, set_term, set_value), 200
+            return "*{bot_name}* already knows that the definition for {term} is {definition}".format(bot_name=BOT_NAME, term=make_bold(set_term), definition=make_bold(set_value)), 200
 
     # save the definition in the database
     entry = Definition(term=set_term, definition=set_value, user_name=user_name)
@@ -321,9 +334,9 @@ def set_definition_and_get_response(slash_command, command_params, user_name):
         db.session.add(entry)
         db.session.commit()
     except Exception as e:
-        return "Sorry, but *{}* was unable to save that definition: {}, {}".format(BOT_NAME, e.message, e.args), 200
+        return "Sorry, but *{bot_name}* was unable to save that definition: {message}, {args}".format(bot_name=BOT_NAME, message=e.message, args=e.args), 200
 
-    return "*{}* has set the definition for *{}* to *{}*".format(BOT_NAME, set_term, set_value), 200
+    return "*{bot_name}* has set the definition for {term} to {definition}".format(bot_name=BOT_NAME, term=make_bold(set_term), definition=make_bold(set_value)), 200
 
 #
 # ROUTES
@@ -384,16 +397,16 @@ def index():
         # verify that the definition is in the database
         entry = query_definition(delete_term)
         if not entry:
-            return "Sorry, but *{}* has no definition for *{}*".format(BOT_NAME, delete_term), 200
+            return "Sorry, but *{bot_name}* has no definition for {term}".format(bot_name=BOT_NAME, term=make_bold(delete_term)), 200
 
         # delete the definition from the database
         try:
             db.session.delete(entry)
             db.session.commit()
         except Exception as e:
-            return "Sorry, but *{}* was unable to delete that definition: {}, {}".format(BOT_NAME, e.message, e.args), 200
+            return "Sorry, but *{bot_name}* was unable to delete that definition: {message}, {args}".format(bot_name=BOT_NAME, message=e.message, args=e.args), 200
 
-        return "*{}* has deleted the definition for *{}*, which was *{}*".format(BOT_NAME, delete_term, entry.definition), 200
+        return "*{bot_name}* has deleted the definition for {term}, which was {definition}".format(bot_name=BOT_NAME, term=make_bold(delete_term), definition=make_bold(entry.definition)), 200
 
     #
     # SEARCH for a string
