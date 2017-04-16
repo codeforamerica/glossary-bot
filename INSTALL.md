@@ -4,7 +4,7 @@ Follow these instructions to install a copy of Glossary Bot locally for developm
 
 #### Requirements
 
-Glossary Bot is written in Python 2.7.
+Glossary Bot is written in Python 3.6.1.
 
 #### Install
 
