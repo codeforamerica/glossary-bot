@@ -2,7 +2,7 @@
 # -*- coding: utf8 -*-
 import unittest
 import json
-from httmock import response, HTTMock
+import responses
 from flask import current_app
 from gloss.models import Definition, Interaction
 from tests.test_base import TestBase
@@ -185,6 +185,7 @@ class TestBot(TestBase):
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue("because it\'s a reserved term".encode('utf-8') in robo_response.data)
 
+    @responses.activate
     def test_get_definition(self):
         ''' We can succesfully set and get a definition from the bot
         '''
@@ -197,29 +198,31 @@ class TestBot(TestBase):
         self.assertEqual(definition_check.term, "EW")
         self.assertEqual(definition_check.definition, "Eligibility Worker")
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['username'])
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("glossie" in payload['text'])
-                self.assertTrue("gloss EW" in payload['text'])
-                self.assertEqual(payload['channel'], "123456")
-                self.assertIsNotNone(payload['icon_emoji'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertEqual(attachment['title'], "EW")
-                self.assertEqual(attachment['text'], "Eligibility Worker")
-                self.assertIsNotNone(attachment['color'])
-                self.assertIsNotNone(attachment['fallback'])
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request the definition
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="EW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="EW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['username'])
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("glossie" in payload['text'])
+        self.assertTrue("gloss EW" in payload['text'])
+        self.assertEqual(payload['channel'], "123456")
+        self.assertIsNotNone(payload['icon_emoji'])
+
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], "EW")
+        self.assertEqual(attachment['text'], "Eligibility Worker")
+        self.assertIsNotNone(attachment['color'])
+        self.assertIsNotNone(attachment['fallback'])
 
         # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
@@ -228,6 +231,12 @@ class TestBot(TestBase):
         self.assertEqual(interaction_check.term, "EW")
         self.assertEqual(interaction_check.action, "found")
 
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
+    @responses.activate
     def test_get_definition_with_special_characters(self):
         ''' We can succesfully set and get a definition with special characters from the bot
         '''
@@ -240,29 +249,31 @@ class TestBot(TestBase):
         self.assertEqual(definition_check.term, "EW")
         self.assertEqual(definition_check.definition, "™¥∑ø∂∆∫")
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['username'])
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("glossie" in payload['text'])
-                self.assertTrue("gloss EW" in payload['text'])
-                self.assertEqual(payload['channel'], "123456")
-                self.assertIsNotNone(payload['icon_emoji'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertEqual(attachment['title'], "EW")
-                self.assertEqual(attachment['text'], "™¥∑ø∂∆∫")
-                self.assertIsNotNone(attachment['color'])
-                self.assertIsNotNone(attachment['fallback'])
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request the definition
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="EW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="EW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['username'])
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("glossie" in payload['text'])
+        self.assertTrue("gloss EW" in payload['text'])
+        self.assertEqual(payload['channel'], "123456")
+        self.assertIsNotNone(payload['icon_emoji'])
+
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], "EW")
+        self.assertEqual(attachment['text'], "™¥∑ø∂∆∫")
+        self.assertIsNotNone(attachment['color'])
+        self.assertIsNotNone(attachment['fallback'])
 
         # the request was recorded in the interactions table
         interaction_check = self.db.session.query(Interaction).first()
@@ -270,6 +281,11 @@ class TestBot(TestBase):
         self.assertEqual(interaction_check.user_name, "glossie")
         self.assertEqual(interaction_check.term, "EW")
         self.assertEqual(interaction_check.action, "found")
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
 
     def test_request_nonexistent_definition(self):
         ''' Test requesting a non-existent definition
@@ -285,6 +301,7 @@ class TestBot(TestBase):
         self.assertEqual(interaction_check.term, "EW")
         self.assertEqual(interaction_check.action, "not_found")
 
+    @responses.activate
     def test_get_definition_with_image(self):
         ''' We can get a properly formatted definition with an image from the bot
         '''
@@ -297,30 +314,37 @@ class TestBot(TestBase):
         self.assertEqual(definition_check.term, "EW")
         self.assertEqual(definition_check.definition, "http://example.com/ew.gif")
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['username'])
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("glossie" in payload['text'])
-                self.assertTrue("gloss EW" in payload['text'])
-                self.assertEqual(payload['channel'], "123456")
-                self.assertIsNotNone(payload['icon_emoji'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertEqual(attachment['title'], "EW")
-                self.assertEqual(attachment['text'], "http://example.com/ew.gif")
-                self.assertEqual(attachment['image_url'], "http://example.com/ew.gif")
-                self.assertIsNotNone(attachment['color'])
-                self.assertIsNotNone(attachment['fallback'])
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request the definition
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="EW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="EW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['username'])
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("glossie" in payload['text'])
+        self.assertTrue("gloss EW" in payload['text'])
+        self.assertEqual(payload['channel'], "123456")
+        self.assertIsNotNone(payload['icon_emoji'])
+
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], "EW")
+        self.assertEqual(attachment['text'], "http://example.com/ew.gif")
+        self.assertEqual(attachment['image_url'], "http://example.com/ew.gif")
+        self.assertIsNotNone(attachment['color'])
+        self.assertIsNotNone(attachment['fallback'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
 
     def test_delete_definition(self):
         ''' A definition can be deleted from the database
@@ -341,6 +365,7 @@ class TestBot(TestBase):
         definition_check = self.db.session.query(Definition).filter(filter).first()
         self.assertIsNone(definition_check)
 
+    @responses.activate
     def test_get_stats(self):
         ''' Stats are properly returned by the bot
         '''
@@ -348,61 +373,77 @@ class TestBot(TestBase):
         self.post_command(text="EW = Eligibility Worker")
         self.post_command(text="shh EW")
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['username'])
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("glossie" in payload['text'])
-                self.assertTrue("gloss stats" in payload['text'])
-                self.assertEqual(payload['channel'], "123456")
-                self.assertIsNotNone(payload['icon_emoji'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertIsNotNone(attachment['title'])
-                self.assertTrue("I have definitions for 1 term" in attachment['text'])
-                self.assertTrue("1 person has defined terms" in attachment['text'])
-                self.assertTrue("I've been asked for definitions 1 time" in attachment['text'])
-                self.assertIsNotNone(attachment['color'])
-                self.assertIsNotNone(attachment['fallback'])
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request stats
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="stats")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="stats")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
 
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['username'])
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("glossie" in payload['text'])
+        self.assertTrue("gloss stats" in payload['text'])
+        self.assertEqual(payload['channel'], "123456")
+        self.assertIsNotNone(payload['icon_emoji'])
+
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNotNone(attachment['title'])
+        self.assertTrue("I have definitions for 1 term" in attachment['text'])
+        self.assertTrue("1 person has defined terms" in attachment['text'])
+        self.assertTrue("I've been asked for definitions 1 time" in attachment['text'])
+        self.assertIsNotNone(attachment['color'])
+        self.assertIsNotNone(attachment['fallback'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
+    @responses.activate
     def test_get_stats_on_empty_database(self):
         ''' A coherent message is returned when requesting stats on an empty database
         '''
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['username'])
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("glossie" in payload['text'])
-                self.assertTrue("gloss stats" in payload['text'])
-                self.assertEqual(payload['channel'], "123456")
-                self.assertIsNotNone(payload['icon_emoji'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertIsNotNone(attachment['title'])
-                self.assertTrue("I don't have any definitions" in attachment['text'])
-                self.assertTrue("Nobody has defined terms" in attachment['text'])
-                self.assertTrue("Nobody has asked me for definitions" in attachment['text'])
-                self.assertIsNotNone(attachment['color'])
-                self.assertIsNotNone(attachment['fallback'])
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request stats
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="stats")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="stats")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
 
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['username'])
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("glossie" in payload['text'])
+        self.assertTrue("gloss stats" in payload['text'])
+        self.assertEqual(payload['channel'], "123456")
+        self.assertIsNotNone(payload['icon_emoji'])
+
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNotNone(attachment['title'])
+        self.assertTrue("I don't have any definitions" in attachment['text'])
+        self.assertTrue("Nobody has defined terms" in attachment['text'])
+        self.assertTrue("Nobody has asked me for definitions" in attachment['text'])
+        self.assertIsNotNone(attachment['color'])
+        self.assertIsNotNone(attachment['fallback'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
+    @responses.activate
     def test_get_learnings(self):
         ''' Learnings are properly returned by the bot
         '''
@@ -411,42 +452,49 @@ class TestBot(TestBase):
         for letter in letters:
             self.post_command(text="{letter}W = {letter}ligibility Worker".format(letter=letter))
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['username'])
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("glossie" in payload['text'])
-                self.assertTrue("gloss learnings" in payload['text'])
-                self.assertEqual(payload['channel'], "123456")
-                self.assertIsNotNone(payload['icon_emoji'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertIsNotNone(attachment['title'])
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-                self.assertTrue("I recently learned definitions for" in attachment['text'])
-                self.assertTrue("KW" in attachment['text'])
-                self.assertTrue("LW" in attachment['text'])
-                self.assertTrue("MW" in attachment['text'])
-                self.assertTrue("NW" in attachment['text'])
-                self.assertTrue("ÓW" in attachment['text'])
-                self.assertTrue("PW" in attachment['text'])
-                self.assertTrue("QW" in attachment['text'])
-                self.assertTrue("RW" in attachment['text'])
-                self.assertTrue("SW" in attachment['text'])
-                self.assertTrue("TW" in attachment['text'])
-                self.assertTrue("UW" in attachment['text'])
-                self.assertTrue("VW" in attachment['text'])
-                self.assertIsNotNone(attachment['color'])
-                self.assertIsNotNone(attachment['fallback'])
-                return response(200)
+        rsp = self.post_command(text="learnings")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
 
-        # send a POST to the bot to request learnings
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="learnings")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['username'])
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("glossie" in payload['text'])
+        self.assertTrue("gloss learnings" in payload['text'])
+        self.assertEqual(payload['channel'], "123456")
+        self.assertIsNotNone(payload['icon_emoji'])
+
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNotNone(attachment['title'])
+
+        self.assertTrue("I recently learned definitions for" in attachment['text'])
+        self.assertTrue("KW" in attachment['text'])
+        self.assertTrue("LW" in attachment['text'])
+        self.assertTrue("MW" in attachment['text'])
+        self.assertTrue("NW" in attachment['text'])
+        self.assertTrue("ÓW" in attachment['text'])
+        self.assertTrue("PW" in attachment['text'])
+        self.assertTrue("QW" in attachment['text'])
+        self.assertTrue("RW" in attachment['text'])
+        self.assertTrue("SW" in attachment['text'])
+        self.assertTrue("TW" in attachment['text'])
+        self.assertTrue("UW" in attachment['text'])
+        self.assertTrue("VW" in attachment['text'])
+        self.assertIsNotNone(attachment['color'])
+        self.assertIsNotNone(attachment['fallback'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
 
     def test_random_learnings(self):
         ''' Learnings are returned in random order when requested
@@ -662,6 +710,7 @@ class TestBot(TestBase):
         self.assertTrue("*{}".format(test_command).encode('utf-8') in robo_response.data)
         self.assertFalse("*/gloss".encode('utf-8') in robo_response.data)
 
+    @responses.activate
     def test_custom_slash_command_for_public_stats(self):
         ''' A slash command other than /gloss is echoed in the bot's response
             to a public stats request.
@@ -671,20 +720,27 @@ class TestBot(TestBase):
         self.post_command(text="EW = Eligibility Worker")
         self.post_command(text="shh EW")
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("{command} stats".format(command=test_command) in payload['text'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request stats
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="stats", slash_command=test_command)
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="stats", slash_command=test_command)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
 
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("{command} stats".format(command=test_command) in payload['text'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
+    @responses.activate
     def test_custom_slash_command_for_public_definition(self):
         ''' A slash command other than /gloss is echoed in the bot's response
             to a public definition request.
@@ -693,39 +749,52 @@ class TestBot(TestBase):
         # set and get a definition to generate some stats
         self.post_command(text="EW = Eligibility Worker")
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("{command} EW".format(command=test_command) in payload['text'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request stats
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="EW", slash_command=test_command)
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="EW", slash_command=test_command)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
 
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("{command} EW".format(command=test_command) in payload['text'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
+    @responses.activate
     def test_custom_slash_command_for_public_learnings(self):
         ''' A slash command other than /gloss is echoed in the bot's response
             to a public learnings request.
         '''
         test_command = "/gg"
 
-        # capture the bot's POST to the incoming webhook and test its content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                self.assertIsNotNone(payload['text'])
-                self.assertTrue("{command} learnings".format(command=test_command) in payload['text'])
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-                return response(200)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
 
-        # send a POST to the bot to request stats
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="learnings", slash_command=test_command)
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        rsp = self.post_command(text="learnings", slash_command=test_command)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("{command} learnings".format(command=test_command) in payload['text'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
 
     def test_get_quiet_definition(self):
         ''' The bot will send a quiet definition when told to do so
@@ -772,6 +841,7 @@ class TestBot(TestBase):
         robo_response = self.post_command(text="= = =")
         self.assertTrue("You can set definitions like this".encode('utf-8') in robo_response.data)
 
+    @responses.activate
     def test_bad_image_urls_rejected(self):
         ''' Bad image URLs are not sent in the attachment's image_url parameter
         '''
@@ -781,25 +851,49 @@ class TestBot(TestBase):
         self.post_command(text="GW = http://stupid/goldfish.bmp")
         self.post_command(text="HW = http://s.mlkshk-cdn.com/r/13ILU")
 
-        # capture the bot's POSTs to the incoming webhook and test the content
-        def response_content(url, request):
-            if 'hooks.example.com' in url.geturl():
-                payload = json.loads(request.body)
-                attachment = payload['attachments'][0]
-                self.assertIsNotNone(attachment)
-                self.assertIsNone(attachment['image_url'])
-                return response(200)
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
 
-        # send POSTs to the bot to request the definitions
-        with HTTMock(response_content):
-            fake_response = self.post_command(text="EW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
-            fake_response = self.post_command(text="FW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
-            fake_response = self.post_command(text="GW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
-            fake_response = self.post_command(text="HW")
-            self.assertTrue(fake_response.status_code in range(200, 299), fake_response.status_code)
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
+
+        rsp = self.post_command(text="EW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNone(attachment['image_url'])
+
+        rsp = self.post_command(text="FW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNone(attachment['image_url'])
+
+        rsp = self.post_command(text="GW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNone(attachment['image_url'])
+
+        rsp = self.post_command(text="HW")
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertIsNone(attachment['image_url'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
 
 if __name__ == '__main__':
     unittest.main()

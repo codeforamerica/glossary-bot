@@ -3,6 +3,6 @@ Flask-Migrate==2.0.3
 Flask-SQLAlchemy==2.2
 Flask-Script==2.0.5
 gunicorn==19.7.1
-httmock==1.2.6
 psycopg2==2.7.1
 requests==2.13.0
+responses==0.5.1
