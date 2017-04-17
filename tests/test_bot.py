@@ -124,7 +124,7 @@ class TestBot(TestBase):
         self.assertTrue("already knows that the definition for".encode('utf-8') in robo_response.data)
 
     def test_set_command_word_definitions(self):
-        ''' We can successfull set and get definitions for unreserved command words.
+        ''' We can successfully set definitions for unreserved command words.
         '''
         robo_response = self.post_command(text="SHH = Sonic Hedge Hog")
         self.assertEqual(robo_response.status_code, 200)
@@ -156,7 +156,7 @@ class TestBot(TestBase):
         self.assertEqual(definition_check.term, "Delete")
         self.assertEqual(definition_check.definition, "Remove or Obliterate")
 
-        robo_response = self.post_command(text="help me = I\'m in hell")
+        robo_response = self.post_command(text="help me = I'm in hell")
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue("has set the definition".encode('utf-8') in robo_response.data)
 
@@ -164,26 +164,26 @@ class TestBot(TestBase):
         definition_check = self.db.session.query(Definition).filter(filter).first()
         self.assertIsNotNone(definition_check)
         self.assertEqual(definition_check.term, "help me")
-        self.assertEqual(definition_check.definition, "I\'m in hell")
+        self.assertEqual(definition_check.definition, "I'm in hell")
 
     def test_failed_set_command_word_definitions(self):
-        ''' We can't successfully set and get definitions for reserved command words.
+        ''' We can't successfully set definitions for reserved command words.
         '''
         robo_response = self.post_command(text="Stats = Statistics")
         self.assertEqual(robo_response.status_code, 200)
-        self.assertTrue("because it\'s a reserved term".encode('utf-8') in robo_response.data)
+        self.assertTrue("because it's a reserved term".encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="help = aid")
         self.assertEqual(robo_response.status_code, 200)
-        self.assertTrue("because it\'s a reserved term".encode('utf-8') in robo_response.data)
+        self.assertTrue("because it's a reserved term".encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="LeArNiNgS = recently")
         self.assertEqual(robo_response.status_code, 200)
-        self.assertTrue("because it\'s a reserved term".encode('utf-8') in robo_response.data)
+        self.assertTrue("because it's a reserved term".encode('utf-8') in robo_response.data)
 
         robo_response = self.post_command(text="? = riddle me this")
         self.assertEqual(robo_response.status_code, 200)
-        self.assertTrue("because it\'s a reserved term".encode('utf-8') in robo_response.data)
+        self.assertTrue("because it's a reserved term".encode('utf-8') in robo_response.data)
 
     @responses.activate
     def test_get_definition(self):
@@ -340,6 +340,64 @@ class TestBot(TestBase):
         self.assertEqual(attachment['image_url'], "http://example.com/ew.gif")
         self.assertIsNotNone(attachment['color'])
         self.assertIsNotNone(attachment['fallback'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
+    @responses.activate
+    def test_set_alias(self):
+        ''' An alias can be set for a definition
+        '''
+        # set & test a definition and some aliases
+        original_term = "Glossary Bot"
+        first_alias = "Gloss Bot"
+        second_alias = "Glossbot"
+        definition = "A Slack bot that maintains a glossary of terms created by its users, and responds to requests with definitions."
+        self.post_command(text="{original_term} = {definition}".format(**locals()))
+        self.post_command(text="{first_alias} = see {original_term}".format(**locals()))
+        self.post_command(text="{second_alias} = see also {original_term}".format(**locals()))
+
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
+
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
+
+        # ask for the original definition
+        rsp = self.post_command(text=original_term)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], original_term)
+        self.assertEqual(attachment['text'], definition)
+
+        # ask for the first alias
+        rsp = self.post_command(text=first_alias)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[1].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], original_term)
+        self.assertEqual(attachment['text'], definition)
+
+        # ask for the second alias
+        rsp = self.post_command(text=second_alias)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[2].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], original_term)
+        self.assertEqual(attachment['text'], definition)
 
         # delete the fake Slack webhook URL
         del(current_app.config['SLACK_WEBHOOK_URL'])
@@ -652,7 +710,7 @@ class TestBot(TestBase):
     def test_learnings_language(self):
         ''' Language describing learnings is numerically accurate
         '''
-        # ask for learnings before any values have been set
+        # ask for recent definitions before any have been set
         robo_response = self.post_command(text="shh learnings")
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue("I haven't learned any definitions yet.".encode('utf-8') in robo_response.data)
@@ -666,6 +724,26 @@ class TestBot(TestBase):
         # when more than one value has been set
         self.post_command(text="FW = Fligibility Worker")
         robo_response = self.post_command(text="shh learnings")
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue("I recently learned definitions for".encode('utf-8') in robo_response.data)
+
+    def test_learnings_alternate_command(self):
+        ''' Learnings are returned when sending the 'recent' command.
+        '''
+        # ask for recent definitions before any have been set
+        robo_response = self.post_command(text="shh recent")
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue("I haven't learned any definitions yet.".encode('utf-8') in robo_response.data)
+
+        # when one value has been set
+        self.post_command(text="EW = Eligibility Worker")
+        robo_response = self.post_command(text="shh recent")
+        self.assertEqual(robo_response.status_code, 200)
+        self.assertTrue("I recently learned the definition for".encode('utf-8') in robo_response.data)
+
+        # when more than one value has been set
+        self.post_command(text="FW = Fligibility Worker")
+        robo_response = self.post_command(text="shh recent")
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue("I recently learned definitions for".encode('utf-8') in robo_response.data)
 
@@ -869,7 +947,7 @@ class TestBot(TestBase):
         rsp = self.post_command(text="FW")
         self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
         # test the captured post payload
-        payload = json.loads(responses.calls[0].request.body)
+        payload = json.loads(responses.calls[1].request.body)
         attachment = payload['attachments'][0]
         self.assertIsNotNone(attachment)
         self.assertIsNone(attachment['image_url'])
@@ -877,7 +955,7 @@ class TestBot(TestBase):
         rsp = self.post_command(text="GW")
         self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
         # test the captured post payload
-        payload = json.loads(responses.calls[0].request.body)
+        payload = json.loads(responses.calls[2].request.body)
         attachment = payload['attachments'][0]
         self.assertIsNotNone(attachment)
         self.assertIsNone(attachment['image_url'])
@@ -885,7 +963,7 @@ class TestBot(TestBase):
         rsp = self.post_command(text="HW")
         self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
         # test the captured post payload
-        payload = json.loads(responses.calls[0].request.body)
+        payload = json.loads(responses.calls[3].request.body)
         attachment = payload['attachments'][0]
         self.assertIsNotNone(attachment)
         self.assertIsNone(attachment['image_url'])
