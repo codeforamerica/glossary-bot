@@ -72,11 +72,11 @@ createdb glossary-bot-test
 You can now run the tests from the command line:
 
 ```
-python manage.py runtests
+python -m unittest
 ```
 
 or run an individual test:
 
 ```
-python tests/test_bot.py TestBot.test_get_definition
+python -m unittest tests.test_bot.TestBot.test_get_definition
 ```
