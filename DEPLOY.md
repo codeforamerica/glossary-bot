@@ -35,7 +35,7 @@ Now, create a new Heroku application. You can give it a name: `heroku create my-
 heroku create
 ```
 
-When you deploy your app, it'll be reachable at a URL like `https://my-glossary-bot.herokuapp.com/`. Enter this URL into the **URL** field of the Slash Commands integration on Slack. See the [Heroku documentation](https://devcenter.heroku.com/articles/getting-started-with-python-o#deploy-your-application-to-heroku) for more configuration options.
+When it's done, the heroku command will output public and git URLs. When you deploy your app, it'll be reachable at the public URL; something like `https://my-glossary-bot.herokuapp.com/`. Enter this URL into the **URL** field of the Slash Commands integration on Slack. See the [Heroku documentation](https://devcenter.heroku.com/articles/getting-started-with-python-o#deploy-your-application-to-heroku) for more configuration options.
 
 To give the bot everything it needs to communicate with Slack, set the config variables you saved when you set up the Slack integrations above. The **Token** from the Slash Command integration:
 
@@ -50,6 +50,24 @@ heroku config:set SLACK_WEBHOOK_URL=https://hooks.slack.com/services/1234567/123
 ```
 
 You can also set these variables in the Heroku web interface.
+
+When you created your Heroku app, it outputted a git URL. You'll use that URL to push the application code to Heroku. If you didn't save the URL, you can get it again with the Heroku info command (replacing _my-glossary-bot_ with the name of your app):
+
+```
+heroku info --app my-glossary-bot
+```
+
+Add the git URL to your repository as a remote named "heroku":
+
+```
+git remote add heroku https://git.heroku.com/my-glossary-bot.git
+```
+
+With that command, you've connected your local copy of the Gloss Bot repository to your app on Heroku! You can verify the change like this:
+
+```
+git remote -v
+```
 
 Now run a git push to deploy the application:
 
