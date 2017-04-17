@@ -747,6 +747,32 @@ class TestBot(TestBase):
         self.assertEqual(robo_response.status_code, 200)
         self.assertTrue("I recently learned definitions for".encode('utf-8') in robo_response.data)
 
+    @responses.activate
+    def test_learnings_alternate_command_echoed(self):
+        ''' The learnings alternate command is echoed in the bot's reponse
+        '''
+        alternate_action = "recent"
+
+        # set a fake Slack webhook URL
+        fake_webhook_url = 'http://webhook.example.com/'
+        current_app.config['SLACK_WEBHOOK_URL'] = fake_webhook_url
+
+        # create a mock to receive POST requests to that URL
+        responses.add(responses.POST, fake_webhook_url, status=200)
+
+        rsp = self.post_command(text=alternate_action)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[0].request.body)
+        self.assertIsNotNone(payload['text'])
+        self.assertTrue("gloss {action}".format(action=alternate_action) in payload['text'])
+
+        # delete the fake Slack webhook URL
+        del(current_app.config['SLACK_WEBHOOK_URL'])
+        # reset the mock
+        responses.reset()
+
     def test_get_help(self):
         ''' Help is properly returned by the bot
         '''

@@ -473,8 +473,8 @@ def index():
         learnings_plain_text, learnings_rich_text = get_learnings(**recent_args)
         if not private_response:
             # send the message
-            fallback = "{name} {command} learnings {params}: {text}".format(name=user_name, command=slash_command, params=command_params, text=learnings_plain_text)
-            pretext = "*{name}* {command} learnings {params}".format(name=user_name, command=slash_command, params=command_params)
+            fallback = "{name} {command} {action} {params}: {text}".format(name=user_name, command=slash_command, action=command_action, params=command_params, text=learnings_plain_text)
+            pretext = "*{name}* {command} {action} {params}".format(name=user_name, command=slash_command, action=command_action, params=command_params)
             title = ""
             send_webhook_with_attachment(channel_id=channel_id, text=learnings_rich_text, fallback=fallback, pretext=pretext, title=title, mrkdwn_in=["text"])
             return "", 200
