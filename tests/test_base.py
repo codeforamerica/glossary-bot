@@ -9,7 +9,7 @@ class TestBase(unittest.TestCase):
     '''
 
     def setUp(self):
-        environ['DATABASE_URL'] = 'postgres:///glossary-bot-test'
+        environ['DATABASE_URL'] = 'postgresql:///glossary-bot-test'
         environ['SLACK_TOKEN'] = 'meowser_token'
         environ['SLACK_WEBHOOK_URL'] = 'http://hooks.example.com/services/HELLO/LOVELY/WORLD'
 
