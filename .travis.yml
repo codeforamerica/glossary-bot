@@ -1,0 +1,11 @@
+language: python
+python:
+- '3.6'
+script: python -m unittest
+addons:
+  postgresql: '9.4'
+before_script:
+- psql -c 'create database glossary-bot-test;' -U postgres
+notifications:
+  slack:
+    secure: YnP4lqdiW3GwSAjBAHKZbsd1pykEdy4vB7ofOdQfoFSqbRMCW4rU2OmXl0RSOBnkdacjGMzdy+POAnbrKDw5Ln4Qv3WkpQbCeLeQbtb3zR8HFvYTagx+9S6kUAY47+uNL9+yTjgm/nwiwMumGhx4G9M+RwjjT1a7f4NrWKmV4NE=
