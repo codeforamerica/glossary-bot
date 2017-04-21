@@ -9,7 +9,7 @@ class TestBase(unittest.TestCase):
     '''
 
     def setUp(self):
-        environ['DATABASE_URL'] = 'postgres:///glossary-bot-test'
+        environ['DATABASE_URL'] = 'postgresql:///glossary-bot-test'
         environ['SLACK_TOKEN'] = 'meowser_token'
         environ['SLACK_WEBHOOK_URL'] = 'http://hooks.example.com/services/HELLO/LOVELY/WORLD'
 
@@ -17,6 +17,7 @@ class TestBase(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
 
+        self.app.testing = True
         self.db = db
         self.client = self.app.test_client()
 
@@ -28,5 +29,5 @@ class TestBase(unittest.TestCase):
         self.db.session.commit()
         self.app_context.pop()
 
-    def post_command(self, text, slash_command=u'/gloss'):
-        return self.client.post('/', data={'token': u'meowser_token', 'text': text, 'user_name': u'glossie', 'channel_id': u'123456', 'command': slash_command})
+    def post_command(self, text, slash_command="/gloss"):
+        return self.client.post('/', data={'token': "meowser_token", 'text': text, 'user_name': "glossie", 'channel_id': "123456", 'command': slash_command})

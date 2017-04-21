@@ -1,8 +1,8 @@
 from os import environ, path
 from gloss import create_app, db
 from gloss.models import Definition, Interaction
-from flask.ext.script import Manager, prompt_bool
-from flask.ext.migrate import Migrate, MigrateCommand
+from flask_script import Manager, prompt_bool
+from flask_migrate import Migrate, MigrateCommand
 
 # grab environment variables from the .env file if it exists
 if path.exists('.env'):

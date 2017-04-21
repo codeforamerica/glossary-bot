@@ -4,7 +4,7 @@ Follow these instructions to install a copy of Glossary Bot locally for developm
 
 #### Requirements
 
-Glossary Bot is written in Python 2.7.
+Glossary Bot is written in Python 3.6.1.
 
 #### Install
 
@@ -72,11 +72,11 @@ createdb glossary-bot-test
 You can now run the tests from the command line:
 
 ```
-python manage.py runtests
+python -m unittest
 ```
 
 or run an individual test:
 
 ```
-python tests/test_bot.py TestBot.test_get_definition
+python -m unittest tests.test_bot.TestBot.test_get_definition
 ```
