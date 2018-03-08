@@ -3,11 +3,11 @@ from . import gloss as app
 from . import db
 from .models import Definition, Interaction
 from sqlalchemy import func, distinct, sql
-from re import compile, match, search, sub, UNICODE
 from requests import post
 from datetime import datetime
 import json
 import random
+import re
 
 STATS_CMDS = ("stats",)
 RECENT_CMDS = ("learnings", "recent")
@@ -104,7 +104,7 @@ def verify_url(text):
 
         Adapted from @adamrofer's Python port of @dperini's pattern here: https://gist.github.com/dperini/729294
     '''
-    url_pattern = compile("^(?:(?:https?)://|)(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)))(?::\d{2,5})?(?:/\S*)?$", UNICODE)
+    url_pattern = re.compile("^(?:(?:https?)://|)(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)))(?::\d{2,5})?(?:/\S*)?$", re.UNICODE)
     return url_pattern.match(text)
 
 def verify_image_url(text):
@@ -116,7 +116,7 @@ def verify_image_url(text):
         pass this test. If you need to test that the URL is both valid AND an image suitable for
         the Incoming Webhook integration, run it through both verify_url() and verify_image_url().
     '''
-    return (match('http', text) and search(r'[gif|jpg|jpeg|png|bmp]$', text))
+    return (re.match('http', text) and re.search(r'[gif|jpg|jpeg|png|bmp]$', text))
 
 def get_stats():
     ''' Gather and return some statistics
@@ -220,7 +220,7 @@ def get_matches_for_term(term):
     ''' Search the glossary for entries that are matches for the passed term.
     '''
     # strip pattern-matching metacharacters from the term
-    stripped_term = sub(r'\||_|%|\*|\+|\?|\{|\}|\(|\)|\[|\]', '', term)
+    stripped_term = re.sub(r'\||_|%|\*|\+|\?|\{|\}|\(|\)|\[|\]', '', term)
     # get ILIKE matches for the term
     # in SQL: SELECT term FROM definitions WHERE term ILIKE '%{}%'.format(stripped_term);
     like_matches = Definition.query.filter(Definition.term.ilike("%{}%".format(stripped_term)))
@@ -254,7 +254,7 @@ def check_definition_for_alias(definition):
     '''
     for keyword in ALIAS_KEYWORDS:
         if definition.lower().startswith(keyword):
-            return definition.split(keyword, 1)[1].strip()
+            return re.split(keyword, definition, flags=re.IGNORECASE)[1].strip()
 
     return None
 
@@ -378,7 +378,7 @@ def index():
 
     # strip excess spaces from the text
     full_text = request.form['text'].strip()
-    full_text = sub(" +", " ", full_text)
+    full_text = re.sub(" +", " ", full_text)
     command_text = full_text
 
     #
@@ -399,7 +399,7 @@ def index():
         return set_definition_and_get_response(slash_command, command_text, user_name)
 
     # we'll respond privately if the text is prefixed with 'shh ' (or any number of s followed by any number of h)
-    shh_pattern = compile(r'^s+h+ ')
+    shh_pattern = re.compile(r'^s+h+ ')
     private_response = shh_pattern.match(command_text)
     if private_response:
         # strip the 'shh' from the command text
@@ -451,7 +451,7 @@ def index():
 
     if command_action in STATS_CMDS:
         stats_newline = get_stats()
-        stats_comma = sub("\n", ", ", stats_newline)
+        stats_comma = re.sub("\n", ", ", stats_newline)
         if not private_response:
             # send the message
             fallback = "{name} {command} stats: {comma}".format(name=user_name, command=slash_command, comma=stats_comma)

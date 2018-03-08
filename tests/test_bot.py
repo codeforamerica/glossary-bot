@@ -354,10 +354,12 @@ class TestBot(TestBase):
         original_term = "Glossary Bot"
         first_alias = "Gloss Bot"
         second_alias = "Glossbot"
+        third_alias = "GB"
         definition = "A Slack bot that maintains a glossary of terms created by its users, and responds to requests with definitions."
         self.post_command(text="{original_term} = {definition}".format(**locals()))
         self.post_command(text="{first_alias} = see {original_term}".format(**locals()))
         self.post_command(text="{second_alias} = see also {original_term}".format(**locals()))
+        self.post_command(text="{third_alias} = See {original_term}".format(**locals()))
 
         # set a fake Slack webhook URL
         fake_webhook_url = 'http://webhook.example.com/'
@@ -390,6 +392,18 @@ class TestBot(TestBase):
 
         # ask for the second alias
         rsp = self.post_command(text=second_alias)
+        self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
+
+        # test the captured post payload
+        payload = json.loads(responses.calls[2].request.body)
+        attachment = payload['attachments'][0]
+        self.assertIsNotNone(attachment)
+        self.assertEqual(attachment['title'], original_term)
+        self.assertEqual(attachment['text'], definition)
+
+        # ask for the third alias
+        # (making sure we're case-insensitive)
+        rsp = self.post_command(text=third_alias)
         self.assertTrue(rsp.status_code in range(200, 299), rsp.status_code)
 
         # test the captured post payload
