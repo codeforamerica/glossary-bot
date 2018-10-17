@@ -4,7 +4,7 @@ Follow these instructions to deploy or upgrade Glossary Bot to Heroku from the c
 
 #### Requirements
 
-Glossary Bot is written in Python 3.6.1.
+Glossary Bot is written in Python 3.6.6.
 
 #### Install
 
