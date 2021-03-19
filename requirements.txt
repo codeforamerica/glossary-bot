@@ -3,6 +3,6 @@ Flask-Migrate==2.2.1
 Flask-SQLAlchemy==2.3.2
 Flask-Script==2.0.6
 gunicorn==19.7.1
-psycopg2==2.7.5
+psycopg2-binary==2.7.7
 requests>=2.20.0
 responses==0.5.1
